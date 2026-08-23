@@ -1,16 +1,16 @@
 import { Link } from "react-router-dom";
-import { FileQuestion } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 
-export default function NotFound() {
+export default function Forbidden() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white border border-slate-200 rounded-lg p-8 text-center shadow-sm">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 text-slate-600 mb-4">
-          <FileQuestion className="w-6 h-6" />
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-50 text-red-600 mb-4">
+          <ShieldAlert className="w-6 h-6" />
         </div>
-        <h1 className="text-xl font-semibold text-slate-900 mb-2">Page Not Found</h1>
+        <h1 className="text-xl font-semibold text-slate-900 mb-2">Access Denied</h1>
         <p className="text-slate-600 mb-6 text-sm">
-          The page you are looking for does not exist or has been moved.
+          You do not have the required permissions to view this page.
         </p>
         <Link
           to="/"
