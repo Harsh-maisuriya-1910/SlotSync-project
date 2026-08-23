@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import authRoutes from "./modules/auth/auth.routes.js";
@@ -10,19 +9,24 @@ import analyticsRoutes from "./modules/analytics/analytics.routes.js";
 import counsellorRoutes from "./modules/counsellor/counsellor.routes.js";
 import waitlistRoutes from "./modules/waitlist/waitlist.routes.js";
 import auditRoutes from "./modules/audit/audit.routes.js";
+
+import { helmetMiddleware, strictCorsMiddleware } from "./middleware/security.middleware.js";
+import loginRateLimiter from "./middleware/rateLimit.middleware.js";
 import errorMiddleware from "./middleware/error.middleware.js";
 
 // App Initialization
 const app = express();
 
-// Middlewares
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true,
-  }),
-);
+// Trust proxy so express-rate-limit sees real client IPs behind reverses proxies
+app.set("trust proxy", 1);
 
+// Security headers
+app.use(helmetMiddleware);
+
+// Strict origin allowlist CORS
+app.use(strictCorsMiddleware);
+
+// Request body size limits
 app.use(express.json({ limit: "10kb" }));
 
 app.use(
@@ -41,6 +45,10 @@ app.get("/", (req, res) => {
     message: "SlotSync API Running",
   });
 });
+
+// Brute-force protection on the credential endpoint (registered before
+// authRoutes so it wraps the login route)
+app.use("/api/auth/login", loginRateLimiter);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);

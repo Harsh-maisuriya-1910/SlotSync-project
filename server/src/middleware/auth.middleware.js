@@ -9,6 +9,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: "Authentication required",
+        code: "UNAUTHENTICATED",
       });
     }
 
@@ -22,6 +23,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: "User not found",
+        code: "UNAUTHENTICATED",
       });
     }
 
@@ -32,6 +34,7 @@ const authMiddleware = async (req, res, next) => {
     return res.status(401).json({
       success: false,
       message: "Invalid or expired token",
+      code: "INVALID_TOKEN",
     });
   }
 };

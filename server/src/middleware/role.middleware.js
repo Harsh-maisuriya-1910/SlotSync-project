@@ -4,6 +4,7 @@ const roleMiddleware = (...allowedRoles) => {
       return res.status(403).json({
         success: false,
         message: "Access forbidden",
+        code: "ACCESS_FORBIDDEN",
       });
     }
 
