@@ -1,0 +1,751 @@
+{
+  "info": {
+    "_postman_id": "b7e3c2a1-4d5f-6a8b-9c0e-1f2a3b4c5d6e",
+    "name": "SlotSync API",
+    "description": "Complete SlotSync API collection covering authentication (with refresh-token rotation), admin, counsellor, student, waitlist, analytics and audit endpoints — including failure cases (401 / 403 / 409 / 422).\n\n**Token auto-save:** Register/Login/Refresh requests store tokens into environment variables automatically via test scripts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "{{baseUrl}}" }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 Created\", () => pm.expect(pm.response.code).to.eql(201));",
+                  "const user = pm.response.json().data;",
+                  "pm.environment.set(\"registeredUserId\", user.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo Student\",\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Registers a new student. Role cannot be chosen by the client."
+          },
+          "response": [
+            {
+              "name": "Success 201",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] }
+              },
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"success\": true,\n  \"message\": \"User registered successfully\",\n  \"data\": {\n    \"id\": \"66c9f0a1b2c3d4e5f6a7b8c9\",\n    \"name\": \"Demo Student\",\n    \"email\": \"student@slotsync.dev\",\n    \"role\": \"STUDENT\",\n    \"createdAt\": \"2026-08-24T10:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.expect(pm.response.code).to.eql(200));",
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set(\"accessToken\", data.accessToken);",
+                  "pm.environment.set(\"refreshToken\", data.refreshToken);",
+                  "pm.environment.set(\"adminAccessToken\", data.accessToken);",
+                  "pm.environment.set(\"adminRefreshToken\", data.refreshToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Logs in an admin and auto-saves access + refresh tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Login as Counsellor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.expect(pm.response.code).to.eql(200));",
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set(\"accessToken\", data.accessToken);",
+                  "pm.environment.set(\"refreshToken\", data.refreshToken);",
+                  "pm.environment.set(\"counsellorAccessToken\", data.accessToken);",
+                  "pm.environment.set(\"counsellorId\", data.user.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{counsellorEmail}}\",\n  \"password\": \"{{counsellorPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login as Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.expect(pm.response.code).to.eql(200));",
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set(\"accessToken\", data.accessToken);",
+                  "pm.environment.set(\"refreshToken\", data.refreshToken);",
+                  "pm.environment.set(\"studentAccessToken\", data.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Tokens",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.environment.set(\"accessToken\", data.accessToken);",
+                  "  pm.environment.set(\"refreshToken\", data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Rotates the refresh token. Reuse of an already-rotated token revokes the whole family (REFRESH_REUSE_DETECTED). Also accepts the httpOnly cookie set on login."
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Revokes the whole refresh-token family for the session."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Create Counsellor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 Created\", () => pm.expect(pm.response.code).to.eql(201));",
+                  "pm.environment.set(\"counsellorEmail\", pm.response.json().data.email ?? pm.environment.get(\"newCounsellorEmail\"));",
+                  "pm.environment.set(\"counsellorPassword\", \"Counsellor@123\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Counsellor\",\n  \"email\": \"{{newCounsellorEmail}}\",\n  \"password\": \"Counsellor@123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/counsellors",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "counsellors"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "admin"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Counsellor Analytics by Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/counsellor/{{counsellorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "counsellor", "{{counsellorId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/audit-logs?page=1&limit=20&action=BOOKING_CREATED",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "audit-logs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "action", "value": "BOOKING_CREATED", "disabled": true },
+                { "key": "entity", "value": "SLOT", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Counsellor",
+      "item": [
+        {
+          "name": "Create Slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 Created\", () => pm.expect(pm.response.code).to.eql(201));",
+                  "pm.environment.set(\"slotId\", pm.response.json().data.id);",
+                  "pm.environment.set(\"slotVersion\", pm.response.json().data.version);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{counsellorAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startTime\": \"{{$isoTimestampPlusDays}}\",\n  \"endTime\": \"{{$isoTimestampPlusDaysEnd}}\",\n  \"capacity\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/slots",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "slots"]
+            },
+            "description": "Replace the ISO timestamps with real future dates before sending (Postman dynamic vars are placeholders). Slot must start more than 30 minutes from now to be bookable."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Slot (Optimistic Concurrency)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.environment.set(\"slotVersion\", pm.response.json().data.version);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{counsellorAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": {{slotVersion}},\n  \"capacity\": 10\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/slots/{{slotId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "slots", "{{slotId}}"]
+            },
+            "description": "Stale expectedVersion returns 409 SLOT_VERSION_CONFLICT."
+          },
+          "response": []
+        },
+        {
+          "name": "View All Slots",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{counsellorAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/slots?limit=20&cursor=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "slots"],
+              "query": [
+                { "key": "limit", "value": "20" },
+                { "key": "cursor", "value": "", "description": "Opaque cursor from pagination.nextCursor; empty = first page" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "My Slots",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{counsellorAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/counsellor/slots",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "counsellor", "slots"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "My Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{counsellorAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/counsellor/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "counsellor", "bookings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Booking Outcome",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{counsellorAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ATTENDED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/counsellor/bookings/{{bookingId}}/outcome",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "counsellor", "bookings", "{{bookingId}}", "outcome"]
+            },
+            "description": "Status must be ATTENDED or NO_SHOW; illegal transitions return 422 INVALID_STATUS_TRANSITION."
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{counsellorAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/counsellor/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "counsellor", "dashboard"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Student",
+      "item": [
+        {
+          "name": "Book Slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.environment.set(\"bookingId\", pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotId\": \"{{slotId}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings"]
+            },
+            "description": "Optional Idempotency-Key header: retries with the same key replay the original result instead of double-booking."
+          },
+          "response": []
+        },
+        {
+          "name": "My Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/my-bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "my-bookings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{bookingId}}", "cancel"]
+            },
+            "description": "Cancellation is blocked within 120 minutes of start: 422 CANCELLATION_WINDOW_CLOSED."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Waitlist",
+      "item": [
+        {
+          "name": "Join Waitlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotId\": \"{{slotId}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/waitlist",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "waitlist"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "My Waitlist",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/waitlist/my-waitlist",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "waitlist", "my-waitlist"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Failure Cases",
+      "item": [
+        {
+          "name": "401 Unauthorized - missing token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401 with code\", () => {",
+                  "  pm.expect(pm.response.code).to.eql(401);",
+                  "  pm.expect(pm.response.json().code).to.eql(\"UNAUTHENTICATED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/my-bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "my-bookings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "403 Forbidden - student hits admin endpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"403 with code\", () => {",
+                  "  pm.expect(pm.response.code).to.eql(403);",
+                  "  pm.expect(pm.response.json().code).to.eql(\"ACCESS_FORBIDDEN\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "admin"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "409 Conflict - duplicate booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409 with domain code\", () => {",
+                  "  pm.expect([409].includes(pm.response.code)).to.be.true;"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotId\": \"{{slotId}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings"]
+            },
+            "description": "Second booking for the same slot without Idempotency-Key returns 409 BOOKING_ALREADY_EXISTS."
+          },
+          "response": []
+        },
+        {
+          "name": "422 Validation - invalid booking payload",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"422 validation error\", () => {",
+                  "  pm.expect(pm.response.code).to.eql(422);",
+                  "  pm.expect(pm.response.json().errors.length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "422 Invalid Status Transition",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{counsellorAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELLED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/counsellor/bookings/{{cancelledBookingId}}/outcome",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "counsellor", "bookings", "{{cancelledBookingId}}", "outcome"]
+            },
+            "description": "Marking a CANCELLED booking as attended returns 422 INVALID_STATUS_TRANSITION. Set cancelledBookingId manually or via a cancelled booking's id."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
