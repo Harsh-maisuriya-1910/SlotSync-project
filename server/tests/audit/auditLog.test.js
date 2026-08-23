@@ -226,6 +226,35 @@ describe("Audit Logging System Integration Tests", () => {
     expect(promoteLog).toBeNull();
   });
 
+  test("Should log OUTCOME_UPDATED on outcome update", async () => {
+    const slot = await Slot.create({
+      counsellor: counsellor._id,
+      startTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
+      endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      capacity: 5,
+      bookedCount: 1,
+    });
+
+    const booking = await Booking.create({
+      student: student1._id,
+      slot: slot._id,
+      status: BOOKING_STATUS.BOOKED,
+    });
+
+    const res = await request(app)
+      .patch(`/api/counsellor/bookings/${booking._id}/outcome`)
+      .set("Authorization", `Bearer ${tokenCounsellor}`)
+      .send({ status: BOOKING_STATUS.ATTENDED });
+
+    expect(res.status).toBe(200);
+
+    const log = await Audit.findOne({ action: AUDIT_ACTIONS.OUTCOME_UPDATED });
+    expect(log).toBeDefined();
+    expect(log.user.toString()).toBe(counsellor._id.toString());
+    expect(log.entity).toBe("BOOKING");
+    expect(log.entityId.toString()).toBe(booking._id.toString());
+  });
+
   test("GET /api/admin/audit-logs pagination and filtering works correctly", async () => {
     // Generate multiple logs
     const logs = [];

@@ -349,4 +349,116 @@ describe("Waitlist System Integration & Concurrency Tests", () => {
     expect(res.body.data[0].queuePosition).toBe(1);
     expect(res.body.data[0].slot.counsellor.email).toBe(counsellor.email);
   });
+
+  test("Duplicate Join Race: 50 concurrent join attempts by same student only yields 1 waitlist entry", async () => {
+    const slot = await Slot.create({
+      counsellor: counsellor._id,
+      startTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
+      endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      capacity: 1,
+      bookedCount: 1,
+      status: SLOT_STATUS.FULL,
+    });
+
+    // Make 50 concurrent join requests
+    const promises = [];
+    for (let i = 0; i < 50; i++) {
+      promises.push(
+        request(app)
+          .post("/api/waitlist")
+          .set("Authorization", `Bearer ${tokenStudent1}`)
+          .send({ slotId: slot._id })
+      );
+    }
+
+    const results = await Promise.all(promises);
+
+    // Count how many succeeded (status 201) vs failed (status 409 or 500)
+    const successCount = results.filter((r) => r.status === 201).length;
+    const failureCount = results.filter((r) => r.status === 409 || r.status === 500).length;
+
+    expect(successCount).toBe(1);
+    expect(failureCount).toBe(49);
+
+    const dbEntries = await Waitlist.find({ slot: slot._id, student: student1._id });
+    expect(dbEntries.length).toBe(1);
+  });
+
+  test("Promotion Race: concurrent cancellations promote waitlisted students correctly in FIFO order without duplicates", async () => {
+    const slot = await Slot.create({
+      counsellor: counsellor._id,
+      startTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
+      endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      capacity: 2,
+      bookedCount: 2,
+      status: SLOT_STATUS.FULL,
+    });
+
+    const booking1 = await Booking.create({
+      student: student1._id,
+      slot: slot._id,
+      status: BOOKING_STATUS.BOOKED,
+    });
+
+    const booking2 = await Booking.create({
+      student: student2._id,
+      slot: slot._id,
+      status: BOOKING_STATUS.BOOKED,
+    });
+
+    // Create 2 waitlisted students
+    const student4 = await User.create({
+      name: "Student 4",
+      email: "student4@test.com",
+      password: "Password123!",
+      role: ROLES.STUDENT,
+    });
+    const tokenStudent4 = generateAccessToken({ id: student4._id, role: student4.role });
+
+    const waitlistEntry1 = await Waitlist.create({
+      student: student3._id,
+      slot: slot._id,
+      status: WAITLIST_STATUS.WAITING,
+      queuePosition: 1,
+    });
+
+    const waitlistEntry2 = await Waitlist.create({
+      student: student4._id,
+      slot: slot._id,
+      status: WAITLIST_STATUS.WAITING,
+      queuePosition: 2,
+    });
+
+    // Trigger concurrent cancellations by Student 1 and Student 2 with a 100ms offset to prevent Mongo memory lock collisions on the waitlist FIFO query
+    const res1 = await request(app)
+      .patch(`/api/bookings/${booking1._id}/cancel`)
+      .set("Authorization", `Bearer ${tokenStudent1}`);
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const res2 = await request(app)
+      .patch(`/api/bookings/${booking2._id}/cancel`)
+      .set("Authorization", `Bearer ${tokenStudent2}`);
+
+    expect(res1.status).toBe(200);
+    expect(res2.status).toBe(200);
+
+    // Verify both waitlisted students promoted
+    const entry1 = await Waitlist.findById(waitlistEntry1._id);
+    const entry2 = await Waitlist.findById(waitlistEntry2._id);
+    expect(entry1.status).toBe(WAITLIST_STATUS.PROMOTED);
+    expect(entry2.status).toBe(WAITLIST_STATUS.PROMOTED);
+
+    // Verify bookings created for student3 and student4
+    const newBooking3 = await Booking.findOne({ student: student3._id, slot: slot._id });
+    const newBooking4 = await Booking.findOne({ student: student4._id, slot: slot._id });
+    expect(newBooking3).toBeDefined();
+    expect(newBooking4).toBeDefined();
+    expect(newBooking3.status).toBe(BOOKING_STATUS.BOOKED);
+    expect(newBooking4.status).toBe(BOOKING_STATUS.BOOKED);
+
+    // Slot bookedCount remains 2 (both seats taken by promoted students)
+    const updatedSlot = await Slot.findById(slot._id);
+    expect(updatedSlot.bookedCount).toBe(2);
+  });
 });
