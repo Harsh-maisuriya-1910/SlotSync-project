@@ -1,8 +1,8 @@
 const BOOKING_STATUS = {
-  BOOKED: "booked",
-  ATTENDED: "attended",
-  NO_SHOW: "no_show",
-  CANCELLED: "cancelled",
+  BOOKED: "BOOKED",
+  CANCELLED: "CANCELLED",
+  ATTENDED: "ATTENDED",
+  NO_SHOW: "NO_SHOW",
 };
 
 export default BOOKING_STATUS;

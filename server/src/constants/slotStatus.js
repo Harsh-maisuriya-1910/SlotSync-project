@@ -1,0 +1,7 @@
+const SLOT_STATUS = {
+  AVAILABLE: "AVAILABLE",
+  FULL: "FULL",
+  CANCELLED: "CANCELLED",
+};
+
+export default SLOT_STATUS;

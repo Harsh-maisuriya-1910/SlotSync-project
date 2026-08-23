@@ -1,15 +1,22 @@
-import express from "express";
-import User from "./user.model.js";
+import { Router } from "express";
 
-const router = express.Router();
+import authMiddleware from "../../middleware/auth.middleware.js";
+import roleMiddleware from "../../middleware/role.middleware.js";
+import validationMiddleware from "../../middleware/validation.middleware.js";
 
-router.post("/test", async (req, res) => {
-  const user = await User.create(req.body);
+import ROLES from "../../constants/roles.js";
 
-  res.status(201).json({
-    success: true,
-    data: user,
-  });
-});
+import userController from "./user.controller.js";
+import { createCounsellorValidation } from "./user.validation.js";
+
+const router = Router();
+
+router.post(
+  "/counsellors",
+  authMiddleware,
+  roleMiddleware(ROLES.ADMIN),
+  validationMiddleware(createCounsellorValidation),
+  userController.createCounsellor,
+);
 
 export default router;
