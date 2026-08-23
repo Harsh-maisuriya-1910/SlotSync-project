@@ -11,6 +11,7 @@
 * `client/src/api/authApi.js`
 * `client/src/api/adminApi.js`
 * `client/src/api/counsellorApi.js`
+* `client/src/api/studentApi.js`
 * `client/src/routes/ProtectedRoute.jsx`
 * `client/src/pages/Forbidden.jsx`
 * `client/src/pages/NotFound.jsx`
@@ -21,6 +22,9 @@
 * `client/src/pages/admin/AdminAuditLogs.jsx`
 * `client/src/pages/counsellor/CounsellorDashboard.jsx`
 * `client/src/pages/counsellor/CounsellorSlots.jsx`
+* `client/src/pages/student/StudentDashboard.jsx`
+* `client/src/pages/student/StudentBookings.jsx`
+* `client/src/pages/student/StudentWaitlist.jsx`
 * `client/src/layouts/DashboardLayout.jsx`
 * `client/src/App.jsx`
 
@@ -42,10 +46,14 @@
 * Counsellor dashboard stats widgets showing slots count, bookings count, and utilization percentage.
 * Counsellor bookings outcome table list with action buttons (Attended / No Show) to update active bookings.
 * Counsellor slot scheduler form with future/overlap check validations and own scheduled slots list.
+* Student API endpoints (`studentApi.js`) for slots listing, bookings creation/retrieval/cancellation, and waitlist registration.
+* Student dashboard browsing calendar with slot availability status badges and booking / waitlist action hooks.
+* Student bookings table tracking registered slots, counsellor info, and cancellation triggers.
+* Student waitlist queue monitor displaying queue position indices and promotion timestamps.
 
 ## Pending Features
-- [ ] Build Student pages (Browse Slots, Book Slots, My Bookings, Waitlisting)
+None! The SlotSync React frontend is 100% complete, fully responsive, and integrated.
 
 ## Current State
-- **Current Branch:** `feature/counsellor-ui`
-- **Next Task:** Build Student module pages
+- **Current Branch:** `feature/student-ui`
+- **Next Task:** Final deployment readiness verification
