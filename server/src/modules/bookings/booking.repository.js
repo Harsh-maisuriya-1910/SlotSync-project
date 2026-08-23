@@ -1,4 +1,5 @@
 import Booking from "./booking.model.js";
+import BOOKING_STATUS from "../../constants/bookingStatus.js";
 
 const createBooking = async (payload) => {
   return await Booking.create(payload);
@@ -23,9 +24,48 @@ const findStudentBookingForSlot = async (studentId, slotId) => {
   });
 };
 
+const findStudentActiveBookings = async (studentId) => {
+  return await Booking.find({
+    student: studentId,
+    status: BOOKING_STATUS.BOOKED,
+  }).populate("slot");
+};
+
+const updateBookingStatus = async (bookingId, status, session = null) => {
+  return await Booking.findByIdAndUpdate(
+    bookingId,
+    {
+      status,
+    },
+    {
+      new: true,
+      session,
+    },
+  );
+};
+
+const findBookingsByStudent = async (studentId) => {
+  return await Booking.find({
+    student: studentId,
+  })
+    .populate({
+      path: "slot",
+      populate: {
+        path: "counsellor",
+        select: "name email",
+      },
+    })
+    .sort({
+      createdAt: -1,
+    });
+};
+
 export default {
   createBooking,
   createBookingWithSession,
   findBookingById,
   findStudentBookingForSlot,
+  findStudentActiveBookings,
+  updateBookingStatus,
+  findBookingsByStudent,
 };

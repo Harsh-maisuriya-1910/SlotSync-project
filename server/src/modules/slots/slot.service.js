@@ -1,6 +1,8 @@
 import ApiError from "../../utility/ApiError.js";
 import SLOT_STATUS from "../../constants/slotStatus.js";
 import slotRepository from "./slot.repository.js";
+import auditService from "../audit/audit.service.js";
+import AUDIT_ACTIONS from "../../constants/auditActions.js";
 
 const createSlot = async (counsellorId, payload) => {
   const { startTime, endTime, capacity } = payload;
@@ -26,6 +28,18 @@ const createSlot = async (counsellorId, payload) => {
     capacity,
     bookedCount: 0,
     status: SLOT_STATUS.AVAILABLE,
+  });
+
+  await auditService.logEvent({
+    user: counsellorId,
+    action: AUDIT_ACTIONS.SLOT_CREATED,
+    entity: "SLOT",
+    entityId: slot._id,
+    metadata: {
+      capacity: slot.capacity,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+    },
   });
 
   return {

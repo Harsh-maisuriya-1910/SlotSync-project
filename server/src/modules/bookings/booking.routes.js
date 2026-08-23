@@ -19,4 +19,18 @@ router.post(
   bookingController.createBooking,
 );
 
+router.patch(
+  "/:bookingId/cancel",
+  authMiddleware,
+  roleMiddleware(ROLES.STUDENT),
+  bookingController.cancelBooking,
+);
+
+router.get(
+  "/my-bookings",
+  authMiddleware,
+  roleMiddleware(ROLES.STUDENT),
+  bookingController.getMyBookings,
+);
+
 export default router;

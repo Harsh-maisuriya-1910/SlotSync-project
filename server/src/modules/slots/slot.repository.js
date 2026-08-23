@@ -21,10 +21,12 @@ const findCounsellorOverlappingSlot = async (
 };
 
 const findSlots = async () => {
-  return await Slot.find().sort({ startTime: 1 });
+  return await Slot.find().sort({
+    startTime: 1,
+  });
 };
 
-const reserveSeat = async (slotId) => {
+const reserveSeat = async (slotId, session = null) => {
   return await Slot.findOneAndUpdate(
     {
       _id: slotId,
@@ -39,6 +41,25 @@ const reserveSeat = async (slotId) => {
     },
     {
       new: true,
+      session,
+    },
+  );
+};
+
+const releaseSeat = async (slotId, session = null) => {
+  return await Slot.findOneAndUpdate(
+    {
+      _id: slotId,
+      bookedCount: { $gt: 0 },
+    },
+    {
+      $inc: {
+        bookedCount: -1,
+      },
+    },
+    {
+      new: true,
+      session,
     },
   );
 };
@@ -49,4 +70,5 @@ export default {
   findCounsellorOverlappingSlot,
   findSlots,
   reserveSeat,
+  releaseSeat,
 };

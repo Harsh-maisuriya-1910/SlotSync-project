@@ -6,6 +6,10 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import userRoutes from "./modules/users/user.routes.js";
 import slotRoutes from "./modules/slots/slot.routes.js";
 import bookingRoutes from "./modules/bookings/booking.routes.js";
+import analyticsRoutes from "./modules/analytics/analytics.routes.js";
+import counsellorRoutes from "./modules/counsellor/counsellor.routes.js";
+import waitlistRoutes from "./modules/waitlist/waitlist.routes.js";
+import auditRoutes from "./modules/audit/audit.routes.js";
 import errorMiddleware from "./middleware/error.middleware.js";
 
 // App Initialization
@@ -42,6 +46,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/slots", slotRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/counsellor", counsellorRoutes);
+app.use("/api/waitlist", waitlistRoutes);
+app.use("/api/admin/audit-logs", auditRoutes);
 
 app.use(errorMiddleware);
 
