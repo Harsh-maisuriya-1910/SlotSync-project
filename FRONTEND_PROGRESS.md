@@ -6,6 +6,7 @@
 * `client/src/index.css`
 * `client/src/App.css`
 * `client/src/store/authSlice.js`
+* `client/src/store/uiSlice.js`
 * `client/src/store/index.js`
 * `client/src/api/api.js`
 * `client/src/api/authApi.js`
@@ -32,6 +33,7 @@
 * Initial dependencies installed (React Router, Redux, Tailwind, Hook Form, Zod).
 * Tailwind CSS configuration for minimalist Stripe/Vercel styling.
 * Redux store config and authentication credentials state slice.
+* Redux UI state slice (`uiSlice.js`) managing modal states, sidebar toggles, and loading overlays.
 * Base API baseQuery with automatic JWT header forwarding and automatic logout on 401.
 * Authentication API Mutators (Login, Register, Logout) and getMe query.
 * Route Guard check (`ProtectedRoute`) for authorized role constraints.
@@ -56,4 +58,4 @@ None! The SlotSync React frontend is 100% complete, fully responsive, and integr
 
 ## Current State
 - **Current Branch:** `feature/student-ui`
-- **Next Task:** Final deployment readiness verification
+- **Next Task:** None (ready for merge)
