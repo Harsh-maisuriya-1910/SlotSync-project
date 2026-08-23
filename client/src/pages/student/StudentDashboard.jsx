@@ -3,7 +3,7 @@ import { Calendar, Users, BookOpen, Clock, AlertCircle, Sparkles } from "lucide-
 import toast from "react-hot-toast";
 
 export default function StudentDashboard() {
-  const { data: slotsData, isLoading, error, refetch } = useGetAllSlotsQuery();
+  const { data: slotsData, isLoading, error } = useGetAllSlotsQuery();
   const [bookSlot, { isLoading: isBooking }] = useCreateBookingMutation();
   const [joinWaitlist, { isLoading: isWaitlisting }] = useJoinWaitlistMutation();
 

@@ -69,7 +69,10 @@ export default function StudentWaitlist() {
                     <tr key={entry._id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-slate-950">Waitlist Appointment</div>
-                        <div className="text-xs text-slate-400 font-mono select-all">{entry._id}</div>
+                        <div className="text-xs text-slate-600">
+                          {start.toLocaleDateString()} ({start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - {end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})
+                        </div>
+                        <div className="text-xs text-slate-400 font-mono select-all mt-0.5">{entry._id}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-slate-900">{entry.slot?.counsellor?.name || "Staff Counsellor"}</div>

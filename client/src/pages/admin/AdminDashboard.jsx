@@ -2,7 +2,7 @@ import { useGetAnalyticsQuery } from "../../api/adminApi.js";
 import { Users, Clock, Calendar, CheckCircle, XCircle, AlertCircle, BarChart3 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const { data, isLoading, error, refetch } = useGetAnalyticsQuery();
+  const { data, isLoading, error } = useGetAnalyticsQuery();
 
   if (isLoading) {
     return (
