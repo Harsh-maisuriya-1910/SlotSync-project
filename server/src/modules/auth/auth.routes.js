@@ -3,7 +3,11 @@ import express from "express";
 import authController from "./auth.controller.js";
 import authMiddleware from "../../middleware/auth.middleware.js";
 import validate from "../../middleware/validation.middleware.js";
-import { registerValidation, loginValidation } from "./auth.validation.js";
+import {
+  registerValidation,
+  loginValidation,
+  refreshValidation,
+} from "./auth.validation.js";
 
 const router = express.Router();
 
@@ -11,6 +15,7 @@ const router = express.Router();
 
 router.post("/register", validate(registerValidation), authController.register);
 router.post("/login", validate(loginValidation), authController.login);
+router.post("/refresh", validate(refreshValidation), authController.refresh);
 
 /* Protected Routes */
 

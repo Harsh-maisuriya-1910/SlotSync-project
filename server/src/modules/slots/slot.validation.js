@@ -28,14 +28,29 @@ const createSlotValidation = Joi.object({
     "any.invalid": "End time must be greater than start time",
   });
 
+// Optimistic concurrency: client echoes back the version it read
 const updateSlotValidation = Joi.object({
-  startTime: Joi.date(),
+  expectedVersion: Joi.number().integer().min(0).required().messages({
+    "number.base": "expectedVersion must be a number",
+    "number.min": "expectedVersion must be at least 0",
+    "any.required": "expectedVersion is required",
+  }),
 
-  endTime: Joi.date(),
+  startTime: Joi.date().optional(),
 
-  capacity: Joi.number().integer().min(1),
+  endTime: Joi.date().optional(),
 
-  status: Joi.string().valid("AVAILABLE", "FULL", "CANCELLED"),
+  capacity: Joi.number().integer().min(1).optional(),
 });
 
-export { createSlotValidation, updateSlotValidation };
+const listSlotsValidation = Joi.object({
+  cursor: Joi.string().allow("").optional(),
+
+  limit: Joi.number().integer().min(1).max(100).optional(),
+});
+
+export {
+  createSlotValidation,
+  updateSlotValidation,
+  listSlotsValidation,
+};

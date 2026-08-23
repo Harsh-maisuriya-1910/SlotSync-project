@@ -7,6 +7,7 @@ const createBooking = asyncHandler(async (req, res) => {
   const booking = await bookingService.createBooking(
     req.user.id,
     req.body.slotId,
+    { idempotencyKey: req.header("Idempotency-Key") },
   );
 
   return res

@@ -8,7 +8,11 @@ import validate from "../../middleware/validation.middleware.js";
 
 import ROLES from "../../constants/roles.js";
 
-import { createSlotValidation } from "./slot.validation.js";
+import {
+  createSlotValidation,
+  updateSlotValidation,
+  listSlotsValidation,
+} from "./slot.validation.js";
 
 const router = express.Router();
 
@@ -20,6 +24,14 @@ router.post(
   slotController.createSlot,
 );
 
-router.get("/", authMiddleware, slotController.getSlots);
+router.get("/", authMiddleware, validate(listSlotsValidation, "query"), slotController.getSlots);
+
+router.patch(
+  "/:slotId",
+  authMiddleware,
+  roleMiddleware(ROLES.COUNSELLOR),
+  validate(updateSlotValidation),
+  slotController.updateSlot,
+);
 
 export default router;

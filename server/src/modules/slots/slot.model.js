@@ -37,6 +37,13 @@ const slotSchema = new mongoose.Schema(
       enum: Object.values(SLOT_STATUS),
       default: SLOT_STATUS.AVAILABLE,
     },
+
+    // Optimistic concurrency control: incremented on every mutation
+    version: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true,

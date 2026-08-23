@@ -38,4 +38,10 @@ const loginValidation = Joi.object({
   }),
 });
 
-export { registerValidation, loginValidation };
+const refreshValidation = Joi.object({
+  refreshToken: Joi.string().allow("").optional().messages({
+    "string.base": "Refresh token must be a string",
+  }),
+});
+
+export { registerValidation, loginValidation, refreshValidation };

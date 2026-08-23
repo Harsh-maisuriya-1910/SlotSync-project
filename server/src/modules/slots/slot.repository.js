@@ -26,6 +26,49 @@ const findSlots = async () => {
   });
 };
 
+// Cursor pagination: stable composite ordering (startTime, _id), no skip()
+const findSlotsWithCursor = async (filter, limit) => {
+  return await Slot.find(filter)
+    .sort({
+      startTime: 1,
+      _id: 1,
+    })
+    .limit(limit);
+};
+
+const findCounsellorOverlappingSlotExcluding = async (
+  counsellorId,
+  startTime,
+  endTime,
+  excludeSlotId,
+) => {
+  return await Slot.findOne({
+    _id: { $ne: excludeSlotId },
+    counsellor: counsellorId,
+    startTime: { $lt: endTime },
+    endTime: { $gt: startTime },
+  });
+};
+
+// Returns null when expectedVersion is stale (another write won the race)
+const updateSlotWithVersion = async (slotId, expectedVersion, updateSet) => {
+  return await Slot.findOneAndUpdate(
+    {
+      _id: slotId,
+      version: expectedVersion,
+    },
+    {
+      $set: updateSet,
+      $inc: {
+        version: 1,
+      },
+    },
+    {
+      new: true,
+    },
+  );
+};
+
 const reserveSeat = async (slotId, session = null) => {
   return await Slot.findOneAndUpdate(
     {
@@ -37,6 +80,7 @@ const reserveSeat = async (slotId, session = null) => {
     {
       $inc: {
         bookedCount: 1,
+        version: 1,
       },
     },
     {
@@ -55,6 +99,7 @@ const releaseSeat = async (slotId, session = null) => {
     {
       $inc: {
         bookedCount: -1,
+        version: 1,
       },
     },
     {
@@ -68,7 +113,10 @@ export default {
   createSlot,
   findSlotById,
   findCounsellorOverlappingSlot,
+  findCounsellorOverlappingSlotExcluding,
+  updateSlotWithVersion,
   findSlots,
+  findSlotsWithCursor,
   reserveSeat,
   releaseSeat,
 };

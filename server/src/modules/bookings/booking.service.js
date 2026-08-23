@@ -9,8 +9,67 @@ import slotRepository from "../slots/slot.repository.js";
 import waitlistService from "../waitlist/waitlist.service.js";
 import auditService from "../audit/audit.service.js";
 import AUDIT_ACTIONS from "../../constants/auditActions.js";
+import IdempotencyRecord from "./idempotencyRecord.model.js";
 
-const createBooking = async (studentId, slotId) => {
+const findIdempotentResponse = async (studentId, idempotencyKey) => {
+  if (!idempotencyKey) {
+    return null;
+  }
+
+  const record = await IdempotencyRecord.findOne({
+    student: studentId,
+    key: idempotencyKey,
+  });
+
+  return record ? record.responseBody : null;
+};
+
+const storeIdempotentResponse = async (
+  studentId,
+  idempotencyKey,
+  responseBody,
+) => {
+  if (!idempotencyKey) {
+    return;
+  }
+
+  try {
+    await IdempotencyRecord.create({
+      student: studentId,
+      key: idempotencyKey,
+      statusCode: 201,
+      responseBody,
+    });
+  } catch (error) {
+    // Concurrent duplicate request won the race; serve its stored response
+    if (error && error.code === 11000) {
+      const winner = await IdempotencyRecord.findOne({
+        student: studentId,
+        key: idempotencyKey,
+      });
+
+      if (winner) {
+        return winner.responseBody;
+      }
+    }
+
+    throw error;
+  }
+};
+
+const createBooking = async (studentId, slotId, options = {}) => {
+  const { idempotencyKey } = options;
+
+  // Retry with the same Idempotency-Key replays the original result
+  const replayedResponse = await findIdempotentResponse(
+    studentId,
+    idempotencyKey,
+  );
+
+  if (replayedResponse) {
+    return replayedResponse;
+  }
+
   const slot = await slotRepository.findSlotById(slotId);
 
   if (!slot) {
@@ -86,13 +145,17 @@ const createBooking = async (studentId, slotId) => {
 
     await session.commitTransaction();
 
-    return {
+    const responseBody = {
       id: booking._id,
       student: booking.student,
       slot: booking.slot,
       status: booking.status,
       createdAt: booking.createdAt,
     };
+
+    await storeIdempotentResponse(studentId, idempotencyKey, responseBody);
+
+    return responseBody;
   } catch (error) {
     await session.abortTransaction();
     throw error;

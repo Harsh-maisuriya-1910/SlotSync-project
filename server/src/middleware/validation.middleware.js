@@ -1,6 +1,6 @@
-const validate = (schema) => {
+const validate = (schema, source = "body") => {
   return (req, res, next) => {
-    const { error, value } = schema.validate(req.body, {
+    const { error, value } = schema.validate(req[source], {
       abortEarly: false,
       stripUnknown: true,
     });
@@ -13,7 +13,13 @@ const validate = (schema) => {
       });
     }
 
-    req.body = value;
+    if (source === "query") {
+      // Express 5 exposes req.query as a getter-only property
+      Object.keys(req.query).forEach((key) => delete req.query[key]);
+      Object.assign(req.query, value);
+    } else {
+      req[source] = value;
+    }
 
     next();
   };

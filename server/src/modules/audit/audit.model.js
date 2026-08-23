@@ -34,6 +34,43 @@ const auditSchema = new mongoose.Schema(
   },
 );
 
+// --- Append-only enforcement -------------------------------------------
+// Audit records are immutable evidence: every mutation or deletion path
+// is rejected at the model layer so no caller can silently rewrite history.
+
+const APPEND_ONLY_ERROR =
+  "Audit log is append-only: modifications and deletions are not allowed";
+
+const rejectAppendOnlyOperation = function () {
+  throw new Error(APPEND_ONLY_ERROR);
+};
+
+[
+  "updateOne",
+  "updateMany",
+  "replaceOne",
+  "findOneAndUpdate",
+  "findOneAndReplace",
+  "findOneAndDelete",
+  "findOneAndRemove",
+].forEach((op) => {
+  auditSchema.pre(op, rejectAppendOnlyOperation);
+});
+
+auditSchema.pre("deleteMany", { document: false, query: true }, rejectAppendOnlyOperation);
+auditSchema.pre("deleteMany", { document: true, query: false }, rejectAppendOnlyOperation);
+auditSchema.pre("deleteOne", { document: false, query: true }, rejectAppendOnlyOperation);
+auditSchema.pre("deleteOne", { document: true, query: false }, rejectAppendOnlyOperation);
+
+// save() on a persisted document would also mutate history
+auditSchema.pre("save", function () {
+  if (!this.isNew) {
+    throw new Error(APPEND_ONLY_ERROR);
+  }
+});
+
+// ------------------------------------------------------------------------
+
 // Indexes for query support, performance, and sorting
 auditSchema.index({ action: 1 });
 auditSchema.index({ entity: 1 });
