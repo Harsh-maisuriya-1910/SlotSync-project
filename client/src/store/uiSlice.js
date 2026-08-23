@@ -25,6 +25,12 @@ const uiSlice = createSlice({
     setGlobalLoading: (state, action) => {
       state.globalLoading = action.payload;
     },
+    startLoading: (state) => {
+      state.globalLoading = true;
+    },
+    stopLoading: (state) => {
+      state.globalLoading = false;
+    },
   },
 });
 
@@ -34,6 +40,8 @@ export const {
   openModal,
   closeModal,
   setGlobalLoading,
+  startLoading,
+  stopLoading,
 } = uiSlice.actions;
 
 // Selectors
