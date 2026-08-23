@@ -9,11 +9,15 @@
 * `client/src/store/index.js`
 * `client/src/api/api.js`
 * `client/src/api/authApi.js`
+* `client/src/api/adminApi.js`
 * `client/src/routes/ProtectedRoute.jsx`
 * `client/src/pages/Forbidden.jsx`
 * `client/src/pages/NotFound.jsx`
 * `client/src/pages/auth/Login.jsx`
 * `client/src/pages/auth/Register.jsx`
+* `client/src/pages/admin/AdminDashboard.jsx`
+* `client/src/pages/admin/AdminCounsellors.jsx`
+* `client/src/pages/admin/AdminAuditLogs.jsx`
 * `client/src/layouts/DashboardLayout.jsx`
 * `client/src/App.jsx`
 
@@ -27,12 +31,15 @@
 * Dashboard structural layout container (`DashboardLayout`) with role-based tabs and header sign-out.
 * Standard 403 Forbidden and 404 Not Found error fallback views.
 * Responsive Login and Registration views styled with tailwind border-slates.
+* Admin mutation query endpoints (`adminApi.js`) for counsellor creation, audit logging, and analytics metrics.
+* Admin dashboard stats cards, capacity progress bar, and user distribution overview.
+* Admin counsellor registration form with Zod schema verification and session-persisted data table listing.
+* Admin audit logs interactive query pane with action dropdown and entity select filters.
 
 ## Pending Features
-- [ ] Build Admin pages (Counsellors, Analytics, Audit Logs)
 - [ ] Build Counsellor pages (Create Slots, View Slots, outcomes)
 - [ ] Build Student pages (Browse Slots, Book Slots, My Bookings, Waitlisting)
 
 ## Current State
-- **Current Branch:** `feature/auth-ui`
-- **Next Task:** Build Admin module pages
+- **Current Branch:** `feature/admin-ui`
+- **Next Task:** Build Counsellor module pages
