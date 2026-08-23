@@ -120,6 +120,21 @@ const cancelBooking = async (studentId, bookingId) => {
     );
   }
 
+  const slot = await slotRepository.findSlotById(booking.slot);
+  if (!slot) {
+    throw new ApiError(404, "Slot not found", "SLOT_NOT_FOUND");
+  }
+
+  const cancellationWindowMinutes = (slot.startTime - new Date()) / (1000 * 60);
+
+  if (cancellationWindowMinutes < 120) {
+    throw new ApiError(
+      422,
+      "Cancellation window closed",
+      "CANCELLATION_WINDOW_CLOSED",
+    );
+  }
+
   const session = await mongoose.startSession();
 
   try {

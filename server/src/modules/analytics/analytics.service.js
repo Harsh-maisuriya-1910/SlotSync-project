@@ -22,6 +22,11 @@ const getAdminAnalytics = async () => {
   };
 };
 
+const getCounsellorAnalytics = async (counsellorId) => {
+  return await analyticsRepository.getCounsellorAnalyticsPipeline(counsellorId);
+};
+
 export default {
   getAdminAnalytics,
+  getCounsellorAnalytics,
 };

@@ -48,8 +48,8 @@ describe("Bookings: Status Machine Transitions Tests", () => {
 
     slot = await Slot.create({
       counsellor: counsellor._id,
-      startTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      startTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      endTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
       capacity: 5,
       bookedCount: 1,
     });
@@ -120,7 +120,7 @@ describe("Bookings: Status Machine Transitions Tests", () => {
       .set("Authorization", `Bearer ${tokenCounsellor}`)
       .send({ status: BOOKING_STATUS.ATTENDED });
 
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(422);
     expect(res.body.code).toBe("INVALID_STATUS_TRANSITION");
   });
 
@@ -136,7 +136,7 @@ describe("Bookings: Status Machine Transitions Tests", () => {
       .set("Authorization", `Bearer ${tokenCounsellor}`)
       .send({ status: BOOKING_STATUS.NO_SHOW });
 
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(422);
     expect(res.body.code).toBe("INVALID_STATUS_TRANSITION");
   });
 });

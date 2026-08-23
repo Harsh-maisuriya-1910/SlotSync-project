@@ -195,7 +195,171 @@ const getCounsellorDashboardStats = async (counsellorId) => {
   };
 };
 
+const getCounsellorAnalyticsPipeline = async (counsellorId) => {
+  const counsellorObjId = new mongoose.Types.ObjectId(counsellorId);
+
+  const results = await Slot.aggregate([
+    {
+      $match: { counsellor: counsellorObjId }
+    },
+    {
+      $facet: {
+        seatUtilization: [
+          {
+            $group: {
+              _id: null,
+              capacity: { $sum: "$capacity" },
+              bookedCount: { $sum: "$bookedCount" }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              capacity: 1,
+              bookedCount: 1,
+              utilizationPercentage: {
+                $cond: {
+                  if: { $gt: ["$capacity", 0] },
+                  then: { $multiply: [{ $divide: ["$bookedCount", "$capacity"] }, 100] },
+                  else: 0
+                }
+              }
+            }
+          }
+        ],
+        bookingStatusDistribution: [
+          {
+            $lookup: {
+              from: "bookings",
+              localField: "_id",
+              foreignField: "slot",
+              as: "bookings"
+            }
+          },
+          { $unwind: "$bookings" },
+          {
+            $group: {
+              _id: "$bookings.status",
+              count: { $sum: 1 }
+            }
+          }
+        ],
+        busiestSlots: [
+          {
+            $project: {
+              _id: 1,
+              startTime: 1,
+              endTime: 1,
+              capacity: 1,
+              bookedCount: 1
+            }
+          },
+          { $sort: { bookedCount: -1 } },
+          { $limit: 5 }
+        ],
+        leadTimeBuckets: [
+          {
+            $lookup: {
+              from: "bookings",
+              localField: "_id",
+              foreignField: "slot",
+              as: "bookings"
+            }
+          },
+          { $unwind: "$bookings" },
+          {
+            $project: {
+              leadTimeHours: {
+                $divide: [
+                  { $subtract: ["$startTime", "$bookings.createdAt"] },
+                  1000 * 60 * 60
+                ]
+              }
+            }
+          },
+          {
+            $bucket: {
+              groupBy: "$leadTimeHours",
+              boundaries: [0, 24, 48, Infinity],
+              default: "Other",
+              output: {
+                count: { $sum: 1 }
+              }
+            }
+          }
+        ],
+        last14DaysTrend: [
+          {
+            $lookup: {
+              from: "bookings",
+              localField: "_id",
+              foreignField: "slot",
+              as: "bookings"
+            }
+          },
+          { $unwind: "$bookings" },
+          {
+            $match: {
+              "bookings.createdAt": {
+                $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+              }
+            }
+          },
+          {
+            $group: {
+              _id: {
+                $dateToString: {
+                  format: "%Y-%m-%d",
+                  date: "$bookings.createdAt",
+                  timezone: "Asia/Kolkata"
+                }
+              },
+              count: { $sum: 1 }
+            }
+          },
+          { $sort: { _id: 1 } }
+        ]
+      }
+    }
+  ]);
+
+  const output = results[0] || {};
+
+  const dist = { BOOKED: 0, CANCELLED: 0, ATTENDED: 0, NO_SHOW: 0 };
+  if (output.bookingStatusDistribution) {
+    output.bookingStatusDistribution.forEach((item) => {
+      if (item._id) {
+        dist[item._id] = item.count;
+      }
+    });
+  }
+
+  const buckets = { "0-24 Hours": 0, "24-48 Hours": 0, "48+ Hours": 0 };
+  if (output.leadTimeBuckets) {
+    output.leadTimeBuckets.forEach((item) => {
+      if (item._id === 0) buckets["0-24 Hours"] = item.count;
+      else if (item._id === 24) buckets["24-48 Hours"] = item.count;
+      else if (item._id === 48 || item._id === "Other") buckets["48+ Hours"] += item.count;
+    });
+  }
+
+  const trend = output.last14DaysTrend ? output.last14DaysTrend.map((item) => ({
+    date: item._id,
+    count: item.count
+  })) : [];
+
+  return {
+    seatUtilization: output.seatUtilization && output.seatUtilization[0] ? output.seatUtilization[0] : { capacity: 0, bookedCount: 0, utilizationPercentage: 0 },
+    bookingStatusDistribution: dist,
+    busiestSlots: output.busiestSlots || [],
+    leadTimeBuckets: Object.keys(buckets).map((key) => ({ bucket: key, count: buckets[key] })),
+    fourteenDayTrend: trend,
+    last14DaysTrend: trend
+  };
+};
+
 export default {
   getAdminDashboardStats,
   getCounsellorDashboardStats,
+  getCounsellorAnalyticsPipeline,
 };

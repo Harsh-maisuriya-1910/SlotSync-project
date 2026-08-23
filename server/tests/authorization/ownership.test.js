@@ -153,7 +153,8 @@ describe("Counsellor Ownership & Outcome Transition Verification", () => {
       .set("Authorization", `Bearer ${tokenA}`)
       .send({ status: "ATTENDED" });
 
-    expect(res.status).toBe(409);
+    // PDF compliance: invalid status transitions return 422
+    expect(res.status).toBe(422);
     expect(res.body.code).toBe("INVALID_STATUS_TRANSITION");
   });
 
@@ -167,7 +168,8 @@ describe("Counsellor Ownership & Outcome Transition Verification", () => {
       .set("Authorization", `Bearer ${tokenA}`)
       .send({ status: "NO_SHOW" });
 
-    expect(res.status).toBe(409);
+    // PDF compliance: invalid status transitions return 422
+    expect(res.status).toBe(422);
     expect(res.body.code).toBe("INVALID_STATUS_TRANSITION");
   });
 

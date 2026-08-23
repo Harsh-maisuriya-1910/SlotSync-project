@@ -10,6 +10,15 @@ const getAdminAnalytics = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, stats, "Admin analytics fetched successfully"));
 });
 
+const getCounsellorAnalytics = asyncHandler(async (req, res) => {
+  const stats = await analyticsService.getCounsellorAnalytics(req.params.id);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, stats, "Counsellor analytics fetched successfully"));
+});
+
 export default {
   getAdminAnalytics,
+  getCounsellorAnalytics,
 };

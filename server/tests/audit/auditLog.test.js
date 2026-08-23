@@ -142,8 +142,8 @@ describe("Audit Logging System Integration Tests", () => {
   test("Should log BOOKING_CANCELLED and WAITLIST_PROMOTED on cancellation with waitlist", async () => {
     const slot = await Slot.create({
       counsellor: counsellor._id,
-      startTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      startTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      endTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
       capacity: 1,
       bookedCount: 1,
       status: SLOT_STATUS.FULL,
@@ -185,8 +185,8 @@ describe("Audit Logging System Integration Tests", () => {
   test("Transaction rollback: aborting booking cancels audit log creation", async () => {
     const slot = await Slot.create({
       counsellor: counsellor._id,
-      startTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      startTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      endTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
       capacity: 1,
       bookedCount: 1,
       status: SLOT_STATUS.FULL,

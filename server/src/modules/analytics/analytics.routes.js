@@ -13,4 +13,11 @@ router.get(
   analyticsController.getAdminAnalytics,
 );
 
+router.get(
+  "/counsellor/:id",
+  authMiddleware,
+  roleMiddleware(ROLES.ADMIN),
+  analyticsController.getCounsellorAnalytics,
+);
+
 export default router;

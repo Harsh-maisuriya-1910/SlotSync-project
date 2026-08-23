@@ -69,7 +69,7 @@ const markBookingOutcome = async (counsellorId, bookingId, status) => {
   // Prevent invalid status transitions
   if (booking.status === BOOKING_STATUS.CANCELLED) {
     throw new ApiError(
-      409,
+      422,
       "Cannot update outcome of a cancelled booking",
       "INVALID_STATUS_TRANSITION",
     );
@@ -77,7 +77,7 @@ const markBookingOutcome = async (counsellorId, bookingId, status) => {
 
   if (booking.status !== BOOKING_STATUS.BOOKED) {
     throw new ApiError(
-      409,
+      422,
       "Booking outcome already marked",
       "INVALID_STATUS_TRANSITION",
     );

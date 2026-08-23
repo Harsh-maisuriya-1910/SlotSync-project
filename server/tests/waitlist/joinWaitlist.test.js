@@ -220,8 +220,8 @@ describe("Waitlist System Integration & Concurrency Tests", () => {
   test("Booking cancellation triggers waitlist promotion in FIFO order", async () => {
     const slot = await Slot.create({
       counsellor: counsellor._id,
-      startTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      startTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      endTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
       capacity: 1,
       bookedCount: 1,
       status: SLOT_STATUS.FULL,
@@ -275,8 +275,8 @@ describe("Waitlist System Integration & Concurrency Tests", () => {
   test("Rollback behavior: promotion failure aborts transaction and rolls back waitlist state", async () => {
     const slot = await Slot.create({
       counsellor: counsellor._id,
-      startTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      startTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      endTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
       capacity: 1,
       bookedCount: 1,
       status: SLOT_STATUS.FULL,
@@ -387,8 +387,8 @@ describe("Waitlist System Integration & Concurrency Tests", () => {
   test("Promotion Race: concurrent cancellations promote waitlisted students correctly in FIFO order without duplicates", async () => {
     const slot = await Slot.create({
       counsellor: counsellor._id,
-      startTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      startTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+      endTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
       capacity: 2,
       bookedCount: 2,
       status: SLOT_STATUS.FULL,
