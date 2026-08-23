@@ -10,6 +10,7 @@
 * `client/src/api/api.js`
 * `client/src/api/authApi.js`
 * `client/src/api/adminApi.js`
+* `client/src/api/counsellorApi.js`
 * `client/src/routes/ProtectedRoute.jsx`
 * `client/src/pages/Forbidden.jsx`
 * `client/src/pages/NotFound.jsx`
@@ -18,6 +19,8 @@
 * `client/src/pages/admin/AdminDashboard.jsx`
 * `client/src/pages/admin/AdminCounsellors.jsx`
 * `client/src/pages/admin/AdminAuditLogs.jsx`
+* `client/src/pages/counsellor/CounsellorDashboard.jsx`
+* `client/src/pages/counsellor/CounsellorSlots.jsx`
 * `client/src/layouts/DashboardLayout.jsx`
 * `client/src/App.jsx`
 
@@ -35,11 +38,14 @@
 * Admin dashboard stats cards, capacity progress bar, and user distribution overview.
 * Admin counsellor registration form with Zod schema verification and session-persisted data table listing.
 * Admin audit logs interactive query pane with action dropdown and entity select filters.
+* Counsellor API endpoints (`counsellorApi.js`) for slots scheduling, own slots queries, own bookings queries, and outcome updates.
+* Counsellor dashboard stats widgets showing slots count, bookings count, and utilization percentage.
+* Counsellor bookings outcome table list with action buttons (Attended / No Show) to update active bookings.
+* Counsellor slot scheduler form with future/overlap check validations and own scheduled slots list.
 
 ## Pending Features
-- [ ] Build Counsellor pages (Create Slots, View Slots, outcomes)
 - [ ] Build Student pages (Browse Slots, Book Slots, My Bookings, Waitlisting)
 
 ## Current State
-- **Current Branch:** `feature/admin-ui`
-- **Next Task:** Build Counsellor module pages
+- **Current Branch:** `feature/counsellor-ui`
+- **Next Task:** Build Student module pages
