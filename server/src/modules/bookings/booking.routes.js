@@ -26,6 +26,13 @@ router.patch(
   bookingController.cancelBooking,
 );
 
+router.delete(
+  "/:bookingId",
+  authMiddleware,
+  roleMiddleware(ROLES.STUDENT),
+  bookingController.cancelBooking,
+);
+
 router.get(
   "/my-bookings",
   authMiddleware,

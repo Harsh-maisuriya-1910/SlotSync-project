@@ -14,7 +14,7 @@ export const studentApi = api.injectEndpoints({
       }),
       invalidatesTags: ["Booking", "Slot", "Analytics", "AuditLog", "Waitlist"],
     }),
-    getOwnBookings: builder.query({
+    getStudentBookings: builder.query({
       query: () => "/bookings/my-bookings",
       providesTags: ["Booking"],
     }),
@@ -43,7 +43,7 @@ export const studentApi = api.injectEndpoints({
 export const {
   useGetAllSlotsQuery,
   useCreateBookingMutation,
-  useGetOwnBookingsQuery,
+  useGetStudentBookingsQuery,
   useCancelBookingMutation,
   useJoinWaitlistMutation,
   useGetOwnWaitlistsQuery,

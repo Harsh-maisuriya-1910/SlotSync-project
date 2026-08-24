@@ -63,9 +63,23 @@ describe("Analytics: Counsellor Analytics Endpoint Tests", () => {
     expect(res.status).toBe(403);
   });
 
-  test("Deny access to Counsellor role (403)", async () => {
+  test("Allow Counsellor role to access their own analytics (200)", async () => {
     const res = await request(app)
       .get(`/api/analytics/counsellor/${counsellor._id}`)
+      .set("Authorization", `Bearer ${tokenCounsellor}`);
+
+    expect(res.status).toBe(200);
+  });
+
+  test("Deny Counsellor role from accessing another counsellor's analytics (403)", async () => {
+    const anotherCounsellor = await User.create({
+      name: "Another Counsellor",
+      email: "another_counsellor@test.com",
+      password: "Password123!",
+      role: ROLES.COUNSELLOR,
+    });
+    const res = await request(app)
+      .get(`/api/analytics/counsellor/${anotherCounsellor._id}`)
       .set("Authorization", `Bearer ${tokenCounsellor}`);
 
     expect(res.status).toBe(403);
@@ -111,7 +125,7 @@ describe("Analytics: Counsellor Analytics Endpoint Tests", () => {
 
     expect(stats).toHaveProperty("leadTimeBuckets");
     const leadTimeBuckets = stats.leadTimeBuckets;
-    expect(leadTimeBuckets.find(b => b.bucket === "48+ Hours").count).toBe(1);
+    expect(leadTimeBuckets.find(b => b.bucket === "1440+").count).toBe(1);
 
     expect(stats).toHaveProperty("last14DaysTrend");
     expect(Array.isArray(stats.last14DaysTrend)).toBe(true);

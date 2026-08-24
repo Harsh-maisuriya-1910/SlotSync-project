@@ -204,6 +204,9 @@ const getCounsellorAnalyticsPipeline = async (counsellorId) => {
     },
     {
       $facet: {
+        totalSlots: [
+          { $count: "count" }
+        ],
         seatUtilization: [
           {
             $group: {
@@ -211,23 +214,9 @@ const getCounsellorAnalyticsPipeline = async (counsellorId) => {
               capacity: { $sum: "$capacity" },
               bookedCount: { $sum: "$bookedCount" }
             }
-          },
-          {
-            $project: {
-              _id: 0,
-              capacity: 1,
-              bookedCount: 1,
-              utilizationPercentage: {
-                $cond: {
-                  if: { $gt: ["$capacity", 0] },
-                  then: { $multiply: [{ $divide: ["$bookedCount", "$capacity"] }, 100] },
-                  else: 0
-                }
-              }
-            }
           }
         ],
-        bookingStatusDistribution: [
+        bookingsStats: [
           {
             $lookup: {
               from: "bookings",
@@ -239,8 +228,76 @@ const getCounsellorAnalyticsPipeline = async (counsellorId) => {
           { $unwind: "$bookings" },
           {
             $group: {
-              _id: "$bookings.status",
-              count: { $sum: 1 }
+              _id: null,
+              totalBookings: { $sum: 1 },
+              confirmedBookings: {
+                $sum: {
+                  $cond: [
+                    { $in: ["$bookings.status", ["BOOKED", "ATTENDED"]] },
+                    1,
+                    0
+                  ]
+                }
+              },
+              bookedCount: {
+                $sum: {
+                  $cond: [{ $eq: ["$bookings.status", "BOOKED"] }, 1, 0]
+                }
+              },
+              attendedCount: {
+                $sum: {
+                  $cond: [{ $eq: ["$bookings.status", "ATTENDED"] }, 1, 0]
+                }
+              },
+              noShowCount: {
+                $sum: {
+                  $cond: [{ $eq: ["$bookings.status", "NO_SHOW"] }, 1, 0]
+                }
+              },
+              cancelledCount: {
+                $sum: {
+                  $cond: [{ $eq: ["$bookings.status", "CANCELLED"] }, 1, 0]
+                }
+              },
+              totalLeadTimeMinutes: {
+                $sum: {
+                  $divide: [
+                    { $subtract: ["$startTime", "$bookings.createdAt"] },
+                    1000 * 60
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        leadTimeBuckets: [
+          {
+            $lookup: {
+              from: "bookings",
+              localField: "_id",
+              foreignField: "slot",
+              as: "bookings"
+            }
+          },
+          { $unwind: "$bookings" },
+          {
+            $project: {
+              leadTimeMinutes: {
+                $divide: [
+                  { $subtract: ["$startTime", "$bookings.createdAt"] },
+                  1000 * 60
+                ]
+              }
+            }
+          },
+          {
+            $bucket: {
+              groupBy: "$leadTimeMinutes",
+              boundaries: [0, 60, 240, 1440, Infinity],
+              default: "Other",
+              output: {
+                count: { $sum: 1 }
+              }
             }
           }
         ],
@@ -256,37 +313,6 @@ const getCounsellorAnalyticsPipeline = async (counsellorId) => {
           },
           { $sort: { bookedCount: -1 } },
           { $limit: 5 }
-        ],
-        leadTimeBuckets: [
-          {
-            $lookup: {
-              from: "bookings",
-              localField: "_id",
-              foreignField: "slot",
-              as: "bookings"
-            }
-          },
-          { $unwind: "$bookings" },
-          {
-            $project: {
-              leadTimeHours: {
-                $divide: [
-                  { $subtract: ["$startTime", "$bookings.createdAt"] },
-                  1000 * 60 * 60
-                ]
-              }
-            }
-          },
-          {
-            $bucket: {
-              groupBy: "$leadTimeHours",
-              boundaries: [0, 24, 48, Infinity],
-              default: "Other",
-              output: {
-                count: { $sum: 1 }
-              }
-            }
-          }
         ],
         last14DaysTrend: [
           {
@@ -320,26 +346,115 @@ const getCounsellorAnalyticsPipeline = async (counsellorId) => {
           { $sort: { _id: 1 } }
         ]
       }
+    },
+    {
+      $project: {
+        totalSlots: { $ifNull: [{ $arrayElemAt: ["$totalSlots.count", 0] }, 0] },
+        totalBookings: { $ifNull: [{ $arrayElemAt: ["$bookingsStats.totalBookings", 0] }, 0] },
+        totalConfirmedBookings: { $ifNull: [{ $arrayElemAt: ["$bookingsStats.confirmedBookings", 0] }, 0] },
+        seatUtilization: {
+          capacity: { $ifNull: [{ $arrayElemAt: ["$seatUtilization.capacity", 0] }, 0] },
+          bookedCount: { $ifNull: [{ $arrayElemAt: ["$seatUtilization.bookedCount", 0] }, 0] },
+          utilizationPercentage: {
+            $cond: {
+              if: { $gt: [{ $ifNull: [{ $arrayElemAt: ["$seatUtilization.capacity", 0] }, 0] }, 0] },
+              then: {
+                $multiply: [
+                  {
+                    $divide: [
+                      { $ifNull: [{ $arrayElemAt: ["$seatUtilization.bookedCount", 0] }, 0] },
+                      { $ifNull: [{ $arrayElemAt: ["$seatUtilization.capacity", 0] }, 0] }
+                    ]
+                  },
+                  100
+                ]
+              },
+              else: 0
+            }
+          }
+        },
+        bookingStatusDistribution: {
+          BOOKED: { $ifNull: [{ $arrayElemAt: ["$bookingsStats.bookedCount", 0] }, 0] },
+          CANCELLED: { $ifNull: [{ $arrayElemAt: ["$bookingsStats.cancelledCount", 0] }, 0] },
+          ATTENDED: { $ifNull: [{ $arrayElemAt: ["$bookingsStats.attendedCount", 0] }, 0] },
+          NO_SHOW: { $ifNull: [{ $arrayElemAt: ["$bookingsStats.noShowCount", 0] }, 0] }
+        },
+        noShowPercentage: {
+          $cond: {
+            if: { $gt: [{ $ifNull: [{ $arrayElemAt: ["$bookingsStats.totalBookings", 0] }, 0] }, 0] },
+            then: {
+              $multiply: [
+                {
+                  $divide: [
+                    { $ifNull: [{ $arrayElemAt: ["$bookingsStats.noShowCount", 0] }, 0] },
+                    { $ifNull: [{ $arrayElemAt: ["$bookingsStats.totalBookings", 0] }, 0] }
+                  ]
+                },
+                100
+              ]
+            },
+            else: 0
+          }
+        },
+        cancellationPercentage: {
+          $cond: {
+            if: { $gt: [{ $ifNull: [{ $arrayElemAt: ["$bookingsStats.totalBookings", 0] }, 0] }, 0] },
+            then: {
+              $multiply: [
+                {
+                  $divide: [
+                    { $ifNull: [{ $arrayElemAt: ["$bookingsStats.cancelledCount", 0] }, 0] },
+                    { $ifNull: [{ $arrayElemAt: ["$bookingsStats.totalBookings", 0] }, 0] }
+                  ]
+                },
+                100
+              ]
+            },
+            else: 0
+          }
+        },
+        averageLeadTimeMinutes: {
+          $cond: {
+            if: { $gt: [{ $ifNull: [{ $arrayElemAt: ["$bookingsStats.totalBookings", 0] }, 0] }, 0] },
+            then: {
+              $divide: [
+                { $ifNull: [{ $arrayElemAt: ["$bookingsStats.totalLeadTimeMinutes", 0] }, 0] },
+                { $ifNull: [{ $arrayElemAt: ["$bookingsStats.totalBookings", 0] }, 0] }
+              ]
+            },
+            else: 0
+          }
+        },
+        leadTimeBuckets: "$leadTimeBuckets",
+        busiestSlots: "$busiestSlots",
+        last14DaysTrend: "$last14DaysTrend"
+      }
     }
   ]);
 
   const output = results[0] || {};
 
-  const dist = { BOOKED: 0, CANCELLED: 0, ATTENDED: 0, NO_SHOW: 0 };
-  if (output.bookingStatusDistribution) {
-    output.bookingStatusDistribution.forEach((item) => {
-      if (item._id) {
-        dist[item._id] = item.count;
-      }
-    });
-  }
+  const bucketLabels = {
+    0: "0-59",
+    60: "60-239",
+    240: "240-1439",
+    1440: "1440+"
+  };
 
-  const buckets = { "0-24 Hours": 0, "24-48 Hours": 0, "48+ Hours": 0 };
+  const formattedBuckets = [
+    { bucket: "0-59", count: 0 },
+    { bucket: "60-239", count: 0 },
+    { bucket: "240-1439", count: 0 },
+    { bucket: "1440+", count: 0 }
+  ];
+
   if (output.leadTimeBuckets) {
-    output.leadTimeBuckets.forEach((item) => {
-      if (item._id === 0) buckets["0-24 Hours"] = item.count;
-      else if (item._id === 24) buckets["24-48 Hours"] = item.count;
-      else if (item._id === 48 || item._id === "Other") buckets["48+ Hours"] += item.count;
+    output.leadTimeBuckets.forEach((b) => {
+      const label = bucketLabels[b._id] || "Other";
+      const bucketObj = formattedBuckets.find((fb) => fb.bucket === label);
+      if (bucketObj) {
+        bucketObj.count = b.count;
+      }
     });
   }
 
@@ -348,11 +463,24 @@ const getCounsellorAnalyticsPipeline = async (counsellorId) => {
     count: item.count
   })) : [];
 
+  const seatUtil = (Array.isArray(output.seatUtilization) ? output.seatUtilization[0] : output.seatUtilization) || {};
+  const statusDist = (Array.isArray(output.bookingStatusDistribution) ? output.bookingStatusDistribution[0] : output.bookingStatusDistribution) || {};
+
   return {
-    seatUtilization: output.seatUtilization && output.seatUtilization[0] ? output.seatUtilization[0] : { capacity: 0, bookedCount: 0, utilizationPercentage: 0 },
-    bookingStatusDistribution: dist,
+    totalSlots: output.totalSlots || 0,
+    totalBookings: output.totalBookings || 0,
+    totalConfirmedBookings: output.totalConfirmedBookings || 0,
+    seatUtilization: {
+      capacity: seatUtil.capacity || 0,
+      bookedCount: seatUtil.bookedCount || 0,
+      utilizationPercentage: parseFloat((seatUtil.utilizationPercentage || 0).toFixed(2))
+    },
+    bookingStatusDistribution: statusDist.BOOKED !== undefined ? statusDist : { BOOKED: 0, CANCELLED: 0, ATTENDED: 0, NO_SHOW: 0 },
+    noShowPercentage: parseFloat((output.noShowPercentage || 0).toFixed(2)),
+    cancellationPercentage: parseFloat((output.cancellationPercentage || 0).toFixed(2)),
+    averageLeadTimeMinutes: parseFloat((output.averageLeadTimeMinutes || 0).toFixed(2)),
+    leadTimeBuckets: formattedBuckets,
     busiestSlots: output.busiestSlots || [],
-    leadTimeBuckets: Object.keys(buckets).map((key) => ({ bucket: key, count: buckets[key] })),
     fourteenDayTrend: trend,
     last14DaysTrend: trend
   };

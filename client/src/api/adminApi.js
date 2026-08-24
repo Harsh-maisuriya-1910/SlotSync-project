@@ -19,7 +19,7 @@ export const adminApi = api.injectEndpoints({
       providesTags: ["AuditLog"],
     }),
     getAnalytics: builder.query({
-      query: () => "/analytics",
+      query: () => "/analytics/admin",
       providesTags: ["Analytics"],
     }),
   }),

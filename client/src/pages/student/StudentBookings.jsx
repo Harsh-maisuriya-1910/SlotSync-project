@@ -1,9 +1,9 @@
-import { useGetOwnBookingsQuery, useCancelBookingMutation } from "../../api/studentApi.js";
+import { useGetStudentBookingsQuery, useCancelBookingMutation } from "../../api/studentApi.js";
 import { Calendar, User, Clock, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function StudentBookings() {
-  const { data: bookingsData, isLoading, error, refetch } = useGetOwnBookingsQuery();
+  const { data: bookingsData, isLoading, error, refetch } = useGetStudentBookingsQuery();
   const [cancelBooking, { isLoading: isCancelling }] = useCancelBookingMutation();
 
   const handleCancel = async (bookingId) => {

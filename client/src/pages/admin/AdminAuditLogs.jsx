@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useGetAuditLogsQuery } from "../../api/adminApi.js";
 import { ChevronLeft, ChevronRight, Filter, RefreshCw, Layers } from "lucide-react";
-import AUDIT_ACTIONS from "../../../../server/src/constants/auditActions.js";
+import AUDIT_ACTIONS from "../../constants/auditActions.js";
+
 
 export default function AdminAuditLogs() {
   const [page, setPage] = useState(1);

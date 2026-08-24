@@ -1,10 +1,10 @@
-import { useGetCounsellorDashboardQuery, useGetOwnBookingsQuery, useMarkBookingOutcomeMutation } from "../../api/counsellorApi.js";
+import { useGetCounsellorDashboardQuery, useGetCounsellorBookingsQuery, useMarkBookingOutcomeMutation } from "../../api/counsellorApi.js";
 import { Calendar, CheckCircle2, XCircle, Users, Percent, UserCheck, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function CounsellorDashboard() {
   const { data: dashboardData, isLoading: isDashLoading, error: dashError } = useGetCounsellorDashboardQuery();
-  const { data: bookingsData, isLoading: isBookingsLoading, error: bookingsError, refetch } = useGetOwnBookingsQuery();
+  const { data: bookingsData, isLoading: isBookingsLoading, error: bookingsError, refetch } = useGetCounsellorBookingsQuery();
   const [markOutcome, { isLoading: isUpdating }] = useMarkBookingOutcomeMutation();
 
   const handleOutcome = async (bookingId, status) => {

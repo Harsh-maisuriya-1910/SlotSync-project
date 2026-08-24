@@ -14,7 +14,7 @@ export const counsellorApi = api.injectEndpoints({
       query: () => "/counsellor/slots",
       providesTags: ["Slot"],
     }),
-    getOwnBookings: builder.query({
+    getCounsellorBookings: builder.query({
       query: () => "/counsellor/bookings",
       providesTags: ["Booking"],
     }),
@@ -36,7 +36,7 @@ export const counsellorApi = api.injectEndpoints({
 export const {
   useCreateSlotMutation,
   useGetOwnSlotsQuery,
-  useGetOwnBookingsQuery,
+  useGetCounsellorBookingsQuery,
   useMarkBookingOutcomeMutation,
   useGetCounsellorDashboardQuery,
 } = counsellorApi;

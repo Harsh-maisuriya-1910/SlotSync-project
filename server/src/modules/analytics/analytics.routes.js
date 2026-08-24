@@ -16,7 +16,7 @@ router.get(
 router.get(
   "/counsellor/:id",
   authMiddleware,
-  roleMiddleware(ROLES.ADMIN),
+  roleMiddleware(ROLES.ADMIN, ROLES.COUNSELLOR),
   analyticsController.getCounsellorAnalytics,
 );
 
