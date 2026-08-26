@@ -1,6 +1,6 @@
+import { useMemo } from "react";
 import { useGetOwnWaitlistsQuery } from "../../api/studentApi.js";
-import { Clock, User, Calendar, Award, CheckCircle, ArrowRight, AlertCircle, XCircle } from "lucide-react";
-import toast from "react-hot-toast";
+import { Clock, User, Calendar } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useSocket } from "../../hooks/useSocket";
 
@@ -9,21 +9,11 @@ export default function StudentWaitlist() {
   const { user } = useSelector((state) => state.auth);
 
   const waitlistEntries = waitlistsData?.data || [];
-  const slotIds = waitlistEntries.map(e => e.slot?.id).filter(Boolean);
+  const slotIds = useMemo(() => waitlistEntries.map(e => e.slot?.id).filter(Boolean), [waitlistEntries]);
 
   useSocket("STUDENT", user?.id, slotIds);
 
-  const handleCancel = async (waitlistId) => {
-    try {
-      const response = await cancelWaitlist(waitlistId).unwrap();
-      if (response.success) {
-        toast.success("Successfully left the waitlist.");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error(err?.data?.message || "Failed to leave waitlist.");
-    }
-  };
+
 
   if (isLoading) {
     return (

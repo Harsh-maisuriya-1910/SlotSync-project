@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 export default function CounsellorDashboard() {
   const { user } = useSelector((state) => state.auth);
   const { data: dashboardData, isLoading: isDashLoading, error: dashError } = useGetCounsellorDashboardQuery();
-  const { data: bookingsData, isLoading: isBookingsLoading, error: bookingsError, refetch } = useGetCounsellorBookingsQuery();
+  const { data: bookingsData, isLoading: isBookingsLoading, error: bookingsError } = useGetCounsellorBookingsQuery();
   const [markOutcome, { isLoading: isUpdating }] = useMarkBookingOutcomeMutation();
 
   useSocket("COUNSELLOR", user?.id, []);
@@ -17,7 +17,6 @@ export default function CounsellorDashboard() {
       const response = await markOutcome({ bookingId, status }).unwrap();
       if (response.success) {
         toast.success(`Booking successfully marked as ${status.replace("_", " ").toLowerCase()}`);
-        refetch();
       }
     } catch (err) {
       console.error(err);
@@ -132,8 +131,8 @@ export default function CounsellorDashboard() {
             <div>
               <p className="text-sm font-medium text-slate-500">Attendance Rate</p>
               <h3 className="text-3xl font-bold text-slate-900 mt-1">
-                {stats.totalBookings > 0
-                  ? Math.round((stats.attendedCount / (stats.attendedCount + stats.noShowCount || 1)) * 100)
+                {(stats.attendedCount + stats.noShowCount) > 0
+                  ? Math.round((stats.attendedCount / (stats.attendedCount + stats.noShowCount)) * 100)
                   : 0}
                 %
               </h3>

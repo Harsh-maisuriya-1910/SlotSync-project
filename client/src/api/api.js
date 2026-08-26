@@ -13,18 +13,19 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-let isRefreshing = false;
+let refreshPromise = null;
 
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
-  if (result.error && result.error.status === 401 && !isRefreshing) {
+  if (result.error && result.error.status === 401) {
     const refreshToken = localStorage.getItem("refreshToken");
 
     if (refreshToken) {
-      isRefreshing = true;
-      try {
-        const refreshResult = await baseQuery(
+      // All concurrent 401s share the same refresh promise — only one refresh
+      // request is ever in-flight at a time, preventing token reuse detection.
+      if (!refreshPromise) {
+        refreshPromise = baseQuery(
           {
             url: "/auth/refresh",
             method: "POST",
@@ -32,21 +33,26 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
           },
           api,
           extraOptions,
-        );
-
-        if (refreshResult.data?.data) {
-          const { accessToken, refreshToken: newRefreshToken, user } = refreshResult.data.data;
-          api.dispatch(setCredentials({ accessToken, refreshToken: newRefreshToken, user }));
-          // Retry the original request with the new token
-          result = await baseQuery(args, api, extraOptions);
-        } else {
-          api.dispatch(logout());
-        }
-      } catch {
-        api.dispatch(logout());
-      } finally {
-        isRefreshing = false;
+        )
+          .then((refreshResult) => {
+            if (refreshResult.data?.data) {
+              const { accessToken, refreshToken: newRefreshToken, user } = refreshResult.data.data;
+              api.dispatch(setCredentials({ accessToken, refreshToken: newRefreshToken, user }));
+            } else {
+              api.dispatch(logout());
+            }
+          })
+          .catch(() => {
+            api.dispatch(logout());
+          })
+          .finally(() => {
+            refreshPromise = null;
+          });
       }
+
+      await refreshPromise;
+      // Retry the original request with the new token
+      result = await baseQuery(args, api, extraOptions);
     } else {
       api.dispatch(logout());
     }

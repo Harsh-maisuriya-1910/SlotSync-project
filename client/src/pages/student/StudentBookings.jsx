@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useGetStudentBookingsQuery, useCancelBookingMutation } from "../../api/studentApi.js";
 import { Calendar, User, Clock, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
@@ -10,7 +11,7 @@ export default function StudentBookings() {
   const { user } = useSelector((state) => state.auth);
 
   const bookings = bookingsData?.data || [];
-  const slotIds = bookings.map(b => b.slot?.id).filter(Boolean);
+  const slotIds = useMemo(() => bookings.map(b => b.slot?.id).filter(Boolean), [bookings]);
 
   useSocket("STUDENT", user?.id, slotIds);
 
@@ -23,7 +24,6 @@ export default function StudentBookings() {
       const response = await cancelBooking(bookingId).unwrap();
       if (response.success) {
         toast.success("Booking cancelled successfully.");
-        refetch();
       }
     } catch (err) {
       console.error(err);

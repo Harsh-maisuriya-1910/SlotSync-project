@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useGetAllSlotsQuery, useCreateBookingMutation, useJoinWaitlistMutation } from "../../api/studentApi.js";
 import { Calendar, Users, BookOpen, Clock, AlertCircle, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
@@ -12,7 +13,7 @@ export default function StudentDashboard() {
   const { user } = useSelector((state) => state.auth);
   
   const slots = slotsData?.data || [];
-  const slotIds = slots.map(s => s.id);
+  const slotIds = useMemo(() => slots.map(s => s.id), [slots]);
 
   useSocket("STUDENT", user?.id, slotIds);
 

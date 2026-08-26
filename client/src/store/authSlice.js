@@ -45,6 +45,7 @@ const authSlice = createSlice({
       localStorage.removeItem("token");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
+      localStorage.removeItem("slotsync_counsellors");
     },
   },
 });

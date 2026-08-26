@@ -131,6 +131,9 @@ const getOwnWaitlist = async (studentId) => {
 };
 
 const promoteNextStudent = async (slotId, session) => {
+  // Load slot to get the counsellor ID needed for socket emission
+  const slot = await slotRepository.findSlotById(slotId);
+
   const nextInQueue = await waitlistRepository.popFirstWaitingEntry(
     slotId,
     session,
@@ -160,10 +163,10 @@ const promoteNextStudent = async (slotId, session) => {
     metadata: { slotId, bookingId: booking._id },
   }, session);
 
-  // Note: session must be committed by the caller (booking.service cancellation) before emitting,
-  // but since we don't have access to the caller's transaction commit here easily, emitting here is fine for UI optimistics.
   emitSlotUpdate(slotId, { action: "waitlist_promoted" });
-  emitCounsellorUpdate(nextInQueue.slot?.counsellor || "unknown", "counsellor:waitlist_update", { action: "waitlist_promoted" });
+  if (slot?.counsellor) {
+    emitCounsellorUpdate(slot.counsellor, "counsellor:waitlist_update", { action: "waitlist_promoted" });
+  }
 
   return booking;
 };

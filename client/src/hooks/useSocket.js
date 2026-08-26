@@ -44,12 +44,6 @@ export const useSocket = (role, id, subscriptions = []) => {
       }
     };
 
-    const onReconnect = (attempt) => {
-      console.log("[Socket] reconnected after", attempt, "attempts");
-      // Re-subscribe on reconnection
-      onConnect();
-    };
-
     const onSlotCreated = () => {
       if (role === "STUDENT") {
         dispatch(studentApi.util.invalidateTags(["Slot"]));
@@ -89,7 +83,6 @@ export const useSocket = (role, id, subscriptions = []) => {
     };
 
     socket.on("connect", onConnect);
-    socket.io.on("reconnect", onReconnect);
     socket.on("slot:created", onSlotCreated);
     socket.on("slot:update", onSlotUpdate);
     socket.on("counsellor:roster_update", onCounsellorRoster);
@@ -101,7 +94,6 @@ export const useSocket = (role, id, subscriptions = []) => {
     return () => {
       // Clean up all listeners before disconnecting
       socket.off("connect", onConnect);
-      socket.io.off("reconnect", onReconnect);
       socket.off("slot:created", onSlotCreated);
       socket.off("slot:update", onSlotUpdate);
       socket.off("counsellor:roster_update", onCounsellorRoster);

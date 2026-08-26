@@ -120,6 +120,8 @@ const getCounsellorDashboard = async (counsellorId) => {
     totalSlots: stats.totalSlots,
     upcomingSlots: stats.upcomingSlots,
     completedSlots: stats.completedSlots,
+    totalReserved: stats.totalReserved,
+    totalCapacity: stats.totalCapacity,
     totalBookings: stats.totalBookings,
     attendedCount: stats.attendedCount,
     noShowCount: stats.noShowCount,
