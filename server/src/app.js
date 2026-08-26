@@ -16,7 +16,7 @@ import env from "./config/env.js";
 // App Initialization
 const app = express();
 
-const allowedOrigins = ["http://localhost:5173", env.CLIENT_URL];
+const allowedOrigins = [env.CLIENT_URL];
 
 // Middlewares
 app.use(
