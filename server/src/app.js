@@ -16,12 +16,21 @@ import env from "./config/env.js";
 // App Initialization
 const app = express();
 
-const allowedOrigins = [env.CLIENT_URL];
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://slot-sync-project.vercel.app",
+  env.CLIENT_URL,
+].filter(Boolean);
 
-// Middlewares
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   }),
 );
