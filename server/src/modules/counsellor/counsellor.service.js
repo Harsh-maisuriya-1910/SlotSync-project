@@ -5,6 +5,7 @@ import Booking from "../bookings/booking.model.js";
 import analyticsRepository from "../analytics/analytics.repository.js";
 import auditService from "../audit/audit.service.js";
 import AUDIT_ACTIONS from "../../constants/auditActions.js";
+import { emitAdminUpdate, emitSlotUpdate } from "../../socket.js";
 
 const getOwnSlots = async (counsellorId) => {
   const slots = await Slot.find({ counsellor: counsellorId }).sort({
@@ -93,6 +94,10 @@ const markBookingOutcome = async (counsellorId, bookingId, status) => {
     entityId: bookingId,
     metadata: { status },
   });
+
+  // Emit live events
+  emitAdminUpdate("admin:analytics_update", { action: "outcome_updated" });
+  emitSlotUpdate(booking.slot._id, { action: "outcome_updated" });
 
   return {
     id: booking._id,

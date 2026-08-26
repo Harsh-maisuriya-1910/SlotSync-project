@@ -14,23 +14,29 @@ const findActiveWaitlistEntry = async (studentId, slotId, session = null) => {
   }).session(session);
 };
 
-const countWaitingEntriesForSlot = async (slotId, session = null) => {
-  return await Waitlist.countDocuments(
+const getMaxQueuePositionForSlot = async (slotId, session = null) => {
+  const maxEntry = await Waitlist.findOne({ slot: slotId })
+    .sort({ queuePosition: -1 })
+    .session(session);
+  return maxEntry ? maxEntry.queuePosition : 0;
+};
+
+const popFirstWaitingEntry = async (slotId, session = null) => {
+  return await Waitlist.findOneAndUpdate(
     {
       slot: slotId,
       status: WAITLIST_STATUS.WAITING,
     },
-    { session },
+    {
+      status: WAITLIST_STATUS.PROMOTED,
+      promotedAt: new Date(),
+    },
+    {
+      sort: { queuePosition: 1 },
+      new: true, // returns the document AFTER update
+      session,
+    }
   );
-};
-
-const findFirstWaitingEntry = async (slotId, session = null) => {
-  return await Waitlist.findOne({
-    slot: slotId,
-    status: WAITLIST_STATUS.WAITING,
-  })
-    .sort({ queuePosition: 1 })
-    .session(session);
 };
 
 const updateWaitlistEntryStatus = async (entryId, status, session = null) => {
@@ -60,8 +66,8 @@ const findWaitlistByStudent = async (studentId) => {
 export default {
   addToWaitlist,
   findActiveWaitlistEntry,
-  countWaitingEntriesForSlot,
-  findFirstWaitingEntry,
+  getMaxQueuePositionForSlot,
+  popFirstWaitingEntry,
   updateWaitlistEntryStatus,
   findWaitlistByStudent,
 };

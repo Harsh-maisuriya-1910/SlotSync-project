@@ -1,8 +1,11 @@
 import { useGetAnalyticsQuery } from "../../api/adminApi.js";
 import { Users, Clock, Calendar, CheckCircle, XCircle, AlertCircle, BarChart3 } from "lucide-react";
+import { useSocket } from "../../hooks/useSocket";
 
 export default function AdminDashboard() {
   const { data, isLoading, error } = useGetAnalyticsQuery();
+
+  useSocket("ADMIN", null, []);
 
   if (isLoading) {
     return (

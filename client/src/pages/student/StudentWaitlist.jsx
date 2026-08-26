@@ -1,8 +1,30 @@
-import { useGetOwnWaitlistsQuery } from "../../api/studentApi.js";
-import { Clock, User, Calendar, Award, CheckCircle, ArrowRight } from "lucide-react";
+import { useGetOwnWaitlistsQuery, useCancelWaitlistMutation } from "../../api/studentApi.js";
+import { Clock, User, Calendar, Award, CheckCircle, ArrowRight, AlertCircle, XCircle } from "lucide-react";
+import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { useSocket } from "../../hooks/useSocket";
 
 export default function StudentWaitlist() {
   const { data: waitlistsData, isLoading, error } = useGetOwnWaitlistsQuery();
+  const [cancelWaitlist, { isLoading: isCancelling }] = useCancelWaitlistMutation();
+  const { user } = useSelector((state) => state.auth);
+
+  const waitlistEntries = waitlistsData?.data || [];
+  const slotIds = waitlistEntries.map(e => e.slot?.id).filter(Boolean);
+
+  useSocket("STUDENT", user?.id, slotIds);
+
+  const handleCancel = async (waitlistId) => {
+    try {
+      const response = await cancelWaitlist(waitlistId).unwrap();
+      if (response.success) {
+        toast.success("Successfully left the waitlist.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.data?.message || "Failed to leave waitlist.");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -20,7 +42,6 @@ export default function StudentWaitlist() {
     );
   }
 
-  const waitlistEntries = waitlistsData?.data || [];
 
   return (
     <div className="space-y-6">
@@ -62,17 +83,21 @@ export default function StudentWaitlist() {
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {waitlistEntries.map((entry) => {
-                  const start = new Date(entry.slot?.startTime);
-                  const end = new Date(entry.slot?.endTime);
+                  const start = entry.slot?.startTime ? new Date(entry.slot.startTime) : null;
+                  const end = entry.slot?.endTime ? new Date(entry.slot.endTime) : null;
 
                   return (
-                    <tr key={entry._id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={entry.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-slate-950">Waitlist Appointment</div>
                         <div className="text-xs text-slate-600">
-                          {start.toLocaleDateString()} ({start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - {end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})
+                          {start && end ? (
+                            <>{start.toLocaleDateString()} ({start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - {end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})</>
+                          ) : (
+                            <span className="text-red-500 font-medium">Slot Data Unavailable</span>
+                          )}
                         </div>
-                        <div className="text-xs text-slate-400 font-mono select-all mt-0.5">{entry._id}</div>
+                        <div className="text-xs text-slate-400 font-mono select-all mt-0.5">{entry.id}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-slate-900">{entry.slot?.counsellor?.name || "Staff Counsellor"}</div>

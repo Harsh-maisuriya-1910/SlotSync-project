@@ -9,21 +9,15 @@ const getAdminDashboardStats = async () => {
   const userStats = await User.aggregate([
     {
       $group: {
-        _id: "$role",
-        count: { $sum: 1 },
+        _id: null,
+        totalStudents: { $sum: { $cond: [{ $eq: ["$role", ROLES.STUDENT] }, 1, 0] } },
+        totalCounsellors: { $sum: { $cond: [{ $eq: ["$role", ROLES.COUNSELLOR] }, 1, 0] } },
+        totalUsers: { $sum: 1 },
       },
     },
   ]);
 
-  let totalStudents = 0;
-  let totalCounsellors = 0;
-  let totalUsers = 0;
-
-  userStats.forEach((stat) => {
-    if (stat._id === ROLES.STUDENT) totalStudents = stat.count;
-    if (stat._id === ROLES.COUNSELLOR) totalCounsellors = stat.count;
-    totalUsers += stat.count;
-  });
+  const userResults = userStats[0] || { totalStudents: 0, totalCounsellors: 0, totalUsers: 0 };
 
   // 2. Slot & Booking & Utilization stats
   const slotStats = await Slot.aggregate([
@@ -68,29 +62,22 @@ const getAdminDashboardStats = async () => {
   const bookingStats = await Booking.aggregate([
     {
       $group: {
-        _id: "$status",
-        count: { $sum: 1 },
+        _id: null,
+        totalBookings: { $sum: 1 },
+        cancelledBookings: { $sum: { $cond: [{ $eq: ["$status", "CANCELLED"] }, 1, 0] } },
+        attendedBookings: { $sum: { $cond: [{ $eq: ["$status", "ATTENDED"] }, 1, 0] } },
+        noShowBookings: { $sum: { $cond: [{ $eq: ["$status", "NO_SHOW"] }, 1, 0] } },
       },
     },
   ]);
 
-  let totalBookings = 0;
-  let cancelledBookings = 0;
-  let attendedBookings = 0;
-  let noShowBookings = 0;
-
-  bookingStats.forEach((stat) => {
-    if (stat._id === "CANCELLED") cancelledBookings = stat.count;
-    if (stat._id === "ATTENDED") attendedBookings = stat.count;
-    if (stat._id === "NO_SHOW") noShowBookings = stat.count;
-    totalBookings += stat.count;
-  });
+  const bookingResults = bookingStats[0] || { totalBookings: 0, cancelledBookings: 0, attendedBookings: 0, noShowBookings: 0 };
 
   return {
     users: {
-      totalStudents,
-      totalCounsellors,
-      totalUsers,
+      totalStudents: userResults.totalStudents,
+      totalCounsellors: userResults.totalCounsellors,
+      totalUsers: userResults.totalUsers,
     },
     slots: {
       totalSlots,
@@ -98,10 +85,10 @@ const getAdminDashboardStats = async () => {
       fullyBookedSlots,
     },
     bookings: {
-      totalBookings,
-      cancelledBookings,
-      attendedBookings,
-      noShowBookings,
+      totalBookings: bookingResults.totalBookings,
+      cancelledBookings: bookingResults.cancelledBookings,
+      attendedBookings: bookingResults.attendedBookings,
+      noShowBookings: bookingResults.noShowBookings,
     },
     utilization: {
       totalCapacity,
@@ -167,21 +154,15 @@ const getCounsellorDashboardStats = async (counsellorId) => {
     },
     {
       $group: {
-        _id: "$status",
-        count: { $sum: 1 },
+        _id: null,
+        totalBookings: { $sum: 1 },
+        attendedCount: { $sum: { $cond: [{ $eq: ["$status", "ATTENDED"] }, 1, 0] } },
+        noShowCount: { $sum: { $cond: [{ $eq: ["$status", "NO_SHOW"] }, 1, 0] } },
       },
     },
   ]);
 
-  let totalBookings = 0;
-  let attendedCount = 0;
-  let noShowCount = 0;
-
-  bookingStats.forEach((stat) => {
-    if (stat._id === "ATTENDED") attendedCount = stat.count;
-    if (stat._id === "NO_SHOW") noShowCount = stat.count;
-    totalBookings += stat.count;
-  });
+  const bookingResults = bookingStats[0] || { totalBookings: 0, attendedCount: 0, noShowCount: 0 };
 
   return {
     totalSlots,
@@ -189,9 +170,9 @@ const getCounsellorDashboardStats = async (counsellorId) => {
     completedSlots,
     totalCapacity,
     totalReserved,
-    totalBookings,
-    attendedCount,
-    noShowCount,
+    totalBookings: bookingResults.totalBookings,
+    attendedCount: bookingResults.attendedCount,
+    noShowCount: bookingResults.noShowCount,
   };
 };
 
@@ -298,6 +279,23 @@ const getCounsellorAnalyticsPipeline = async (counsellorId) => {
               output: {
                 count: { $sum: 1 }
               }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              bucket: {
+                $switch: {
+                  branches: [
+                    { case: { $eq: ["$_id", 0] }, then: "0-59" },
+                    { case: { $eq: ["$_id", 60] }, then: "60-239" },
+                    { case: { $eq: ["$_id", 240] }, then: "240-1439" },
+                    { case: { $eq: ["$_id", 1440] }, then: "1440+" }
+                  ],
+                  default: "Other"
+                }
+              },
+              count: 1
             }
           }
         ],
@@ -425,44 +423,51 @@ const getCounsellorAnalyticsPipeline = async (counsellorId) => {
             else: 0
           }
         },
-        leadTimeBuckets: "$leadTimeBuckets",
+        leadTimeBuckets: {
+          $map: {
+            input: ["0-59", "60-239", "240-1439", "1440+"],
+            as: "label",
+            in: {
+              bucket: "$$label",
+              count: {
+                $let: {
+                  vars: {
+                    match: {
+                      $filter: {
+                        input: "$leadTimeBuckets",
+                        as: "b",
+                        cond: { $eq: ["$$b.bucket", "$$label"] }
+                      }
+                    }
+                  },
+                  in: {
+                    $cond: {
+                      if: { $gt: [{ $size: "$$match" }, 0] },
+                      then: { $arrayElemAt: ["$$match.count", 0] },
+                      else: 0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         busiestSlots: "$busiestSlots",
-        last14DaysTrend: "$last14DaysTrend"
+        last14DaysTrend: {
+          $map: {
+            input: "$last14DaysTrend",
+            as: "item",
+            in: {
+              date: "$$item._id",
+              count: "$$item.count"
+            }
+          }
+        }
       }
     }
   ]);
 
   const output = results[0] || {};
-
-  const bucketLabels = {
-    0: "0-59",
-    60: "60-239",
-    240: "240-1439",
-    1440: "1440+"
-  };
-
-  const formattedBuckets = [
-    { bucket: "0-59", count: 0 },
-    { bucket: "60-239", count: 0 },
-    { bucket: "240-1439", count: 0 },
-    { bucket: "1440+", count: 0 }
-  ];
-
-  if (output.leadTimeBuckets) {
-    output.leadTimeBuckets.forEach((b) => {
-      const label = bucketLabels[b._id] || "Other";
-      const bucketObj = formattedBuckets.find((fb) => fb.bucket === label);
-      if (bucketObj) {
-        bucketObj.count = b.count;
-      }
-    });
-  }
-
-  const trend = output.last14DaysTrend ? output.last14DaysTrend.map((item) => ({
-    date: item._id,
-    count: item.count
-  })) : [];
-
   const seatUtil = (Array.isArray(output.seatUtilization) ? output.seatUtilization[0] : output.seatUtilization) || {};
   const statusDist = (Array.isArray(output.bookingStatusDistribution) ? output.bookingStatusDistribution[0] : output.bookingStatusDistribution) || {};
 
@@ -479,10 +484,15 @@ const getCounsellorAnalyticsPipeline = async (counsellorId) => {
     noShowPercentage: parseFloat((output.noShowPercentage || 0).toFixed(2)),
     cancellationPercentage: parseFloat((output.cancellationPercentage || 0).toFixed(2)),
     averageLeadTimeMinutes: parseFloat((output.averageLeadTimeMinutes || 0).toFixed(2)),
-    leadTimeBuckets: formattedBuckets,
+    leadTimeBuckets: output.leadTimeBuckets || [
+      { bucket: "0-59", count: 0 },
+      { bucket: "60-239", count: 0 },
+      { bucket: "240-1439", count: 0 },
+      { bucket: "1440+", count: 0 }
+    ],
     busiestSlots: output.busiestSlots || [],
-    fourteenDayTrend: trend,
-    last14DaysTrend: trend
+    fourteenDayTrend: output.last14DaysTrend || [],
+    last14DaysTrend: output.last14DaysTrend || []
   };
 };
 

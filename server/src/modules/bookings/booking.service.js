@@ -10,6 +10,7 @@ import waitlistService from "../waitlist/waitlist.service.js";
 import auditService from "../audit/audit.service.js";
 import AUDIT_ACTIONS from "../../constants/auditActions.js";
 import IdempotencyRecord from "./idempotencyRecord.model.js";
+import { emitSlotUpdate, emitCounsellorUpdate, emitAdminUpdate } from "../../socket.js";
 
 const findIdempotentResponse = async (studentId, idempotencyKey) => {
   if (!idempotencyKey) {
@@ -155,6 +156,11 @@ const createBooking = async (studentId, slotId, options = {}) => {
 
     await storeIdempotentResponse(studentId, idempotencyKey, responseBody);
 
+    // Emit live events
+    emitSlotUpdate(slotId, { action: "booking_created" });
+    emitCounsellorUpdate(slot.counsellor, "counsellor:roster_update", { action: "booking_created" });
+    emitAdminUpdate("admin:analytics_update", { action: "booking_created" });
+
     return responseBody;
   } catch (error) {
     await session.abortTransaction();
@@ -220,6 +226,11 @@ const cancelBooking = async (studentId, bookingId) => {
     }, session);
 
     await session.commitTransaction();
+
+    // Emit live events
+    emitSlotUpdate(booking.slot, { action: "booking_cancelled" });
+    emitCounsellorUpdate(slot.counsellor, "counsellor:roster_update", { action: "booking_cancelled" });
+    emitAdminUpdate("admin:analytics_update", { action: "booking_cancelled" });
 
     return {
       id: booking._id,

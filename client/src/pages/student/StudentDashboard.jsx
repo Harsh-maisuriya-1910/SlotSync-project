@@ -1,11 +1,20 @@
 import { useGetAllSlotsQuery, useCreateBookingMutation, useJoinWaitlistMutation } from "../../api/studentApi.js";
 import { Calendar, Users, BookOpen, Clock, AlertCircle, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { useSocket } from "../../hooks/useSocket";
 
 export default function StudentDashboard() {
   const { data: slotsData, isLoading, error } = useGetAllSlotsQuery();
   const [bookSlot, { isLoading: isBooking }] = useCreateBookingMutation();
   const [joinWaitlist, { isLoading: isWaitlisting }] = useJoinWaitlistMutation();
+
+  const { user } = useSelector((state) => state.auth);
+  
+  const slots = slotsData?.data || [];
+  const slotIds = slots.map(s => s.id);
+
+  useSocket("STUDENT", user?.id, slotIds);
 
   const handleBook = async (slotId) => {
     try {
@@ -49,7 +58,7 @@ export default function StudentDashboard() {
     );
   }
 
-  const slots = slotsData?.data || [];
+
 
   return (
     <div className="space-y-6">

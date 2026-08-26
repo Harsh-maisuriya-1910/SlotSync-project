@@ -1,10 +1,18 @@
 import { useGetStudentBookingsQuery, useCancelBookingMutation } from "../../api/studentApi.js";
 import { Calendar, User, Clock, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { useSocket } from "../../hooks/useSocket";
 
 export default function StudentBookings() {
   const { data: bookingsData, isLoading, error, refetch } = useGetStudentBookingsQuery();
   const [cancelBooking, { isLoading: isCancelling }] = useCancelBookingMutation();
+  const { user } = useSelector((state) => state.auth);
+
+  const bookings = bookingsData?.data || [];
+  const slotIds = bookings.map(b => b.slot?.id).filter(Boolean);
+
+  useSocket("STUDENT", user?.id, slotIds);
 
   const handleCancel = async (bookingId) => {
     if (!window.confirm("Are you sure you want to cancel this booking?")) {
@@ -40,7 +48,6 @@ export default function StudentBookings() {
     );
   }
 
-  const bookings = bookingsData?.data || [];
 
   return (
     <div className="space-y-6">
@@ -82,27 +89,33 @@ export default function StudentBookings() {
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {bookings.map((booking) => {
-                  const start = new Date(booking.slot?.startTime);
-                  const end = new Date(booking.slot?.endTime);
+                  const start = booking.slot?.startTime ? new Date(booking.slot.startTime) : null;
+                  const end = booking.slot?.endTime ? new Date(booking.slot.endTime) : null;
 
                   return (
-                    <tr key={booking._id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={booking.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-slate-950">Counseling Session</div>
-                        <div className="text-xs text-slate-400 font-mono select-all">{booking._id}</div>
+                        <div className="text-xs text-slate-400 font-mono select-all">{booking.id}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-slate-900">{booking.slot?.counsellor?.name || "Staff Counsellor"}</div>
                         <div className="text-xs text-slate-500">{booking.slot?.counsellor?.email || "counsellor@slotsync.com"}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-xs font-semibold text-slate-700">
-                          {start.toLocaleDateString()}
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          {start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} -{" "}
-                          {end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </div>
+                        {start && end ? (
+                          <>
+                            <div className="text-xs font-semibold text-slate-700">
+                              {start.toLocaleDateString()}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} -{" "}
+                              {end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </div>
+                          </>
+                        ) : (
+                          <span className="text-red-500 text-xs font-medium">Slot Data Unavailable</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
@@ -122,7 +135,7 @@ export default function StudentBookings() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {booking.status === "BOOKED" ? (
                           <button
-                            onClick={() => handleCancel(booking._id)}
+                            onClick={() => handleCancel(booking.id)}
                             disabled={isCancelling}
                             className="inline-flex items-center px-3 py-1.5 border border-red-200 rounded text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50"
                           >

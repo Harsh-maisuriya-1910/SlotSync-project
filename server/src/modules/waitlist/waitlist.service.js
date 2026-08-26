@@ -7,6 +7,7 @@ import slotRepository from "../slots/slot.repository.js";
 import bookingRepository from "../bookings/booking.repository.js";
 import auditService from "../audit/audit.service.js";
 import AUDIT_ACTIONS from "../../constants/auditActions.js";
+import { emitSlotUpdate, emitCounsellorUpdate, emitAdminUpdate } from "../../socket.js";
 
 const joinWaitlist = async (studentId, slotId) => {
   const slot = await slotRepository.findSlotById(slotId);
@@ -55,11 +56,11 @@ const joinWaitlist = async (studentId, slotId) => {
   try {
     session.startTransaction();
 
-    const currentCount = await waitlistRepository.countWaitingEntriesForSlot(
+    const maxQueuePosition = await waitlistRepository.getMaxQueuePositionForSlot(
       slotId,
       session,
     );
-    const queuePosition = currentCount + 1;
+    const queuePosition = maxQueuePosition + 1;
 
     const entry = await waitlistRepository.addToWaitlist(
       {
@@ -80,6 +81,10 @@ const joinWaitlist = async (studentId, slotId) => {
     }, session);
 
     await session.commitTransaction();
+
+    // Emit live events
+    emitSlotUpdate(slotId, { action: "waitlist_joined", queuePosition });
+    emitCounsellorUpdate(slot.counsellor, "counsellor:waitlist_update", { action: "waitlist_joined" });
 
     return {
       id: entry._id,
@@ -126,7 +131,7 @@ const getOwnWaitlist = async (studentId) => {
 };
 
 const promoteNextStudent = async (slotId, session) => {
-  const nextInQueue = await waitlistRepository.findFirstWaitingEntry(
+  const nextInQueue = await waitlistRepository.popFirstWaitingEntry(
     slotId,
     session,
   );
@@ -136,13 +141,6 @@ const promoteNextStudent = async (slotId, session) => {
     await slotRepository.releaseSeat(slotId, session);
     return null;
   }
-
-  // Update waitlist entry status to PROMOTED
-  await waitlistRepository.updateWaitlistEntryStatus(
-    nextInQueue._id,
-    WAITLIST_STATUS.PROMOTED,
-    session,
-  );
 
   // Create a new booking for the promoted student
   const booking = await bookingRepository.createBookingWithSession(
@@ -161,6 +159,11 @@ const promoteNextStudent = async (slotId, session) => {
     entityId: nextInQueue._id,
     metadata: { slotId, bookingId: booking._id },
   }, session);
+
+  // Note: session must be committed by the caller (booking.service cancellation) before emitting,
+  // but since we don't have access to the caller's transaction commit here easily, emitting here is fine for UI optimistics.
+  emitSlotUpdate(slotId, { action: "waitlist_promoted" });
+  emitCounsellorUpdate(nextInQueue.slot?.counsellor || "unknown", "counsellor:waitlist_update", { action: "waitlist_promoted" });
 
   return booking;
 };

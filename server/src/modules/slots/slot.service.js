@@ -4,6 +4,7 @@ import slotRepository from "./slot.repository.js";
 import auditService from "../audit/audit.service.js";
 import AUDIT_ACTIONS from "../../constants/auditActions.js";
 import { decodeCursor, encodeCursor } from "../../utility/cursorPagination.js";
+import { emitGlobalSlotCreated, emitSlotUpdate } from "../../socket.js";
 
 const serializeSlot = (slot) => ({
   id: slot._id,
@@ -55,6 +56,8 @@ const createSlot = async (counsellorId, payload) => {
       endTime: slot.endTime,
     },
   });
+
+  emitGlobalSlotCreated({ action: "slot_created", slotId: slot._id });
 
   return {
     id: slot._id,
@@ -187,6 +190,8 @@ const updateSlot = async (counsellorId, slotId, payload) => {
     entityId: updatedSlot._id,
     metadata: { expectedVersion, updateSet },
   });
+
+  emitSlotUpdate(slotId, { action: "slot_updated" });
 
   return serializeSlot(updatedSlot);
 };

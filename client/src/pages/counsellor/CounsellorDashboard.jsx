@@ -1,11 +1,16 @@
 import { useGetCounsellorDashboardQuery, useGetCounsellorBookingsQuery, useMarkBookingOutcomeMutation } from "../../api/counsellorApi.js";
 import { Calendar, CheckCircle2, XCircle, Users, Percent, UserCheck, AlertTriangle } from "lucide-react";
+import { useSelector } from "react-redux";
+import { useSocket } from "../../hooks/useSocket";
 import toast from "react-hot-toast";
 
 export default function CounsellorDashboard() {
+  const { user } = useSelector((state) => state.auth);
   const { data: dashboardData, isLoading: isDashLoading, error: dashError } = useGetCounsellorDashboardQuery();
   const { data: bookingsData, isLoading: isBookingsLoading, error: bookingsError, refetch } = useGetCounsellorBookingsQuery();
   const [markOutcome, { isLoading: isUpdating }] = useMarkBookingOutcomeMutation();
+
+  useSocket("COUNSELLOR", user?.id, []);
 
   const handleOutcome = async (bookingId, status) => {
     try {

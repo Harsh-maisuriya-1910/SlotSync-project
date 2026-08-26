@@ -87,7 +87,7 @@ const seedDatabase = async () => {
       endTime.setHours(startTime.getHours() + 1);
 
       const counsellor = counsellors[i % 5];
-      const capacity = 15;
+      const capacity = 2;
 
       slotsData.push({
         counsellor: counsellor._id,
@@ -146,8 +146,8 @@ const seedDatabase = async () => {
       // Select 20 random students for this slot
       const selectedStudents = shuffleArray(students).slice(0, 20);
 
-      // A. Seed Bookings (Active capacity = 15)
-      for (let j = 0; j < 15; j++) {
+      // A. Seed Bookings (Active capacity = 2)
+      for (let j = 0; j < 2; j++) {
         const student = selectedStudents[j];
         let status = BOOKING_STATUS.BOOKED;
 
@@ -187,7 +187,7 @@ const seedDatabase = async () => {
       }
 
       // B. Seed Cancelled Bookings (2 per slot)
-      for (let j = 15; j < 17; j++) {
+      for (let j = 2; j < 4; j++) {
         const student = selectedStudents[j];
         const bookingId = new mongoose.Types.ObjectId();
 
@@ -219,8 +219,8 @@ const seedDatabase = async () => {
       }
 
       // Update slot's bookedCount field in the database
-      // The capacity is 15 and it has 15 active bookings
-      slot.bookedCount = 15;
+      // The capacity is 2 and it has 2 active bookings
+      slot.bookedCount = 2;
       if (isPast) {
         slot.status = SLOT_STATUS.COMPLETED;
       } else {
@@ -229,9 +229,9 @@ const seedDatabase = async () => {
       await slot.save();
 
       // C. Seed Waitlist Entries (3 per slot)
-      for (let j = 17; j < 20; j++) {
+      for (let j = 4; j < 7; j++) {
         const student = selectedStudents[j];
-        const queuePosition = j - 16; // 1, 2, 3
+        const queuePosition = j - 3; // 1, 2, 3
 
         const waitlistId = new mongoose.Types.ObjectId();
         waitlistsToInsert.push({
