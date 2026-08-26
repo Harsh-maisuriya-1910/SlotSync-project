@@ -190,13 +190,19 @@ export default function CounsellorDashboard() {
                       <div className="text-xs text-slate-500">{booking.student?.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-xs font-semibold text-slate-700">
-                        {new Date(booking.slot?.startTime).toLocaleDateString()}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {new Date(booking.slot?.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} -{" "}
-                        {new Date(booking.slot?.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </div>
+                      {booking.slot?.startTime ? (
+                        <>
+                          <div className="text-xs font-semibold text-slate-700">
+                            {new Date(booking.slot.startTime).toLocaleDateString()}
+                          </div>
+                          <div className="text-xs text-slate-500">
+                            {new Date(booking.slot.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} -{" "}
+                            {new Date(booking.slot.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-red-400 text-xs">Slot data unavailable</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span

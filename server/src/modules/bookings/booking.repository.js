@@ -38,7 +38,7 @@ const updateBookingStatus = async (bookingId, status, session = null) => {
       status,
     },
     {
-      new: true,
+      returnDocument: "after",
       session,
     },
   );

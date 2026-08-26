@@ -1,4 +1,4 @@
-import { useGetOwnWaitlistsQuery, useCancelWaitlistMutation } from "../../api/studentApi.js";
+import { useGetOwnWaitlistsQuery } from "../../api/studentApi.js";
 import { Clock, User, Calendar, Award, CheckCircle, ArrowRight, AlertCircle, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
@@ -6,7 +6,6 @@ import { useSocket } from "../../hooks/useSocket";
 
 export default function StudentWaitlist() {
   const { data: waitlistsData, isLoading, error } = useGetOwnWaitlistsQuery();
-  const [cancelWaitlist, { isLoading: isCancelling }] = useCancelWaitlistMutation();
   const { user } = useSelector((state) => state.auth);
 
   const waitlistEntries = waitlistsData?.data || [];

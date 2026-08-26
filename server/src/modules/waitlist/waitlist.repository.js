@@ -33,7 +33,7 @@ const popFirstWaitingEntry = async (slotId, session = null) => {
     },
     {
       sort: { queuePosition: 1 },
-      new: true, // returns the document AFTER update
+      returnDocument: "after",
       session,
     }
   );
@@ -46,7 +46,7 @@ const updateWaitlistEntryStatus = async (entryId, status, session = null) => {
   }
 
   return await Waitlist.findByIdAndUpdate(entryId, updateData, {
-    new: true,
+    returnDocument: "after",
     session,
   });
 };

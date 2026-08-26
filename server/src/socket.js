@@ -4,9 +4,21 @@ import env from "./config/env.js";
 let io;
 
 export const initializeSocket = (server) => {
+  const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://slot-sync-project.vercel.app",
+    env.CLIENT_URL,
+  ].filter(Boolean);
+
   io = new Server(server, {
     cors: {
-      origin: env.CLIENT_URL || "http://localhost:8080",
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error("Socket CORS: Not allowed by CORS"));
+      },
       methods: ["GET", "POST", "PATCH", "DELETE"],
       credentials: true,
     },

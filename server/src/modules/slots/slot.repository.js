@@ -64,7 +64,7 @@ const updateSlotWithVersion = async (slotId, expectedVersion, updateSet) => {
       },
     },
     {
-      new: true,
+      returnDocument: "after",
     },
   );
 };
@@ -84,7 +84,7 @@ const reserveSeat = async (slotId, session = null) => {
       },
     },
     {
-      new: true,
+      returnDocument: "after",
       session,
     },
   );
@@ -103,7 +103,7 @@ const releaseSeat = async (slotId, session = null) => {
       },
     },
     {
-      new: true,
+      returnDocument: "after",
       session,
     },
   );
