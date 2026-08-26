@@ -5,70 +5,113 @@ import { studentApi } from "../api/studentApi";
 import { counsellorApi } from "../api/counsellorApi";
 import { adminApi } from "../api/adminApi";
 
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5000";
+const SOCKET_URL =
+  import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5000";
 
 export const useSocket = (role, id, subscriptions = []) => {
   const socketRef = useRef(null);
   const dispatch = useDispatch();
+  // Store subscriptions in a ref to avoid re-creating the socket on every re-render
+  const subscriptionsRef = useRef(subscriptions);
+  subscriptionsRef.current = subscriptions;
 
   useEffect(() => {
-    socketRef.current = io(SOCKET_URL, {
+    if (!role) return;
+
+    const socket = io(SOCKET_URL, {
       withCredentials: true,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
 
-    const socket = socketRef.current;
+    socketRef.current = socket;
 
-    socket.on("connect", () => {
-      console.log("Socket connected");
+    const onConnect = () => {
+      console.log("[Socket] connected:", socket.id);
 
-      // Subscribe to appropriate rooms based on role
+      // Subscribe to rooms based on role, converting IDs to strings
       if (role === "STUDENT") {
-        subscriptions.forEach(slotId => socket.emit("subscribe:slot", slotId));
-      } else if (role === "COUNSELLOR") {
-        socket.emit("subscribe:counsellor", id);
+        subscriptionsRef.current.forEach((slotId) =>
+          socket.emit("subscribe:slot", String(slotId))
+        );
+      } else if (role === "COUNSELLOR" && id) {
+        socket.emit("subscribe:counsellor", String(id));
       } else if (role === "ADMIN") {
         socket.emit("subscribe:admin");
       }
-    });
+    };
 
-    // Global Events
-    socket.on("slot:created", () => {
+    const onReconnect = (attempt) => {
+      console.log("[Socket] reconnected after", attempt, "attempts");
+      // Re-subscribe on reconnection
+      onConnect();
+    };
+
+    const onSlotCreated = () => {
       if (role === "STUDENT") {
         dispatch(studentApi.util.invalidateTags(["Slot"]));
       }
-    });
+    };
 
-    // Slot-specific updates (e.g., booking created, waitlist joined)
-    socket.on("slot:update", () => {
+    const onSlotUpdate = () => {
       if (role === "STUDENT") {
         dispatch(studentApi.util.invalidateTags(["Slot", "Booking", "Waitlist"]));
       }
-    });
+    };
 
-    // Counsellor updates
-    socket.on("counsellor:roster_update", () => {
+    const onCounsellorRoster = () => {
       if (role === "COUNSELLOR") {
         dispatch(counsellorApi.util.invalidateTags(["Booking", "Slot", "Analytics"]));
       }
-    });
+    };
 
-    socket.on("counsellor:waitlist_update", () => {
+    const onCounsellorWaitlist = () => {
       if (role === "COUNSELLOR") {
         dispatch(counsellorApi.util.invalidateTags(["Booking", "Waitlist", "Slot"]));
       }
-    });
+    };
 
-    // Admin updates
-    socket.on("admin:analytics_update", () => {
+    const onAdminAnalytics = () => {
       if (role === "ADMIN") {
         dispatch(adminApi.util.invalidateTags(["Analytics"]));
       }
-    });
+    };
+
+    const onDisconnect = (reason) => {
+      console.log("[Socket] disconnected:", reason);
+    };
+
+    const onConnectError = (err) => {
+      console.warn("[Socket] connection error:", err.message);
+    };
+
+    socket.on("connect", onConnect);
+    socket.io.on("reconnect", onReconnect);
+    socket.on("slot:created", onSlotCreated);
+    socket.on("slot:update", onSlotUpdate);
+    socket.on("counsellor:roster_update", onCounsellorRoster);
+    socket.on("counsellor:waitlist_update", onCounsellorWaitlist);
+    socket.on("admin:analytics_update", onAdminAnalytics);
+    socket.on("disconnect", onDisconnect);
+    socket.on("connect_error", onConnectError);
 
     return () => {
+      // Clean up all listeners before disconnecting
+      socket.off("connect", onConnect);
+      socket.io.off("reconnect", onReconnect);
+      socket.off("slot:created", onSlotCreated);
+      socket.off("slot:update", onSlotUpdate);
+      socket.off("counsellor:roster_update", onCounsellorRoster);
+      socket.off("counsellor:waitlist_update", onCounsellorWaitlist);
+      socket.off("admin:analytics_update", onAdminAnalytics);
+      socket.off("disconnect", onDisconnect);
+      socket.off("connect_error", onConnectError);
       socket.disconnect();
     };
-  }, [role, id, subscriptions.join(","), dispatch]);
+  }, [role, id, dispatch]); // Note: subscriptions handled via ref to avoid reconnects
 
   return socketRef.current;
 };

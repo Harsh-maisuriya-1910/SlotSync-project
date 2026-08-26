@@ -31,8 +31,8 @@ export default function Login() {
     try {
       const response = await login(data).unwrap();
       if (response.success && response.data) {
-        const { accessToken, user } = response.data;
-        dispatch(setCredentials({ accessToken, user }));
+        const { accessToken, refreshToken, user } = response.data;
+        dispatch(setCredentials({ accessToken, refreshToken, user }));
         toast.success("Welcome back!");
 
         // Redirect based on role

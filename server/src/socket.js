@@ -69,7 +69,7 @@ export const getIO = () => {
 
 // Helper emit functions
 export const emitSlotUpdate = (slotId, payload) => {
-  if (io) io.to(`slot:${slotId}`).emit("slot:update", payload);
+  if (io) io.to(`slot:${String(slotId)}`).emit("slot:update", payload);
 };
 
 export const emitGlobalSlotCreated = (payload) => {
@@ -77,7 +77,7 @@ export const emitGlobalSlotCreated = (payload) => {
 };
 
 export const emitCounsellorUpdate = (counsellorId, eventType, payload) => {
-  if (io) io.to(`counsellor:${counsellorId}`).emit(eventType, payload);
+  if (io) io.to(`counsellor:${String(counsellorId)}`).emit(eventType, payload);
 };
 
 export const emitAdminUpdate = (eventType, payload) => {
