@@ -11,14 +11,17 @@ import counsellorRoutes from "./modules/counsellor/counsellor.routes.js";
 import waitlistRoutes from "./modules/waitlist/waitlist.routes.js";
 import auditRoutes from "./modules/audit/audit.routes.js";
 import errorMiddleware from "./middleware/error.middleware.js";
+import env from "./config/env.js";
 
 // App Initialization
 const app = express();
 
+const allowedOrigins = ["http://localhost:5173", env.CLIENT_URL];
+
 // Middlewares
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: allowedOrigins,
     credentials: true,
   }),
 );
