@@ -4,9 +4,10 @@ import { LogOut, User, Calendar, BookOpen, Clock, Users, ShieldAlert, Award } fr
 import toast from "react-hot-toast";
 import { logout } from "../store/authSlice.js";
 import { useLogoutMutation } from "../api/authApi.js";
+import { SocketProvider } from "../hooks/useSocket.js";
 
 export default function DashboardLayout() {
-  const { user } = useSelector((state) => state.auth);
+  const { user, refreshToken } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,7 +15,7 @@ export default function DashboardLayout() {
 
   const handleLogout = async () => {
     try {
-      await logoutMutation().unwrap();
+      await logoutMutation(refreshToken).unwrap();
     } catch (err) {
       console.warn("Logout request failed, cleaning local state anyway", err);
     } finally {
@@ -115,7 +116,9 @@ export default function DashboardLayout() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Outlet />
+        <SocketProvider role={user?.role} id={user?.id}>
+          <Outlet />
+        </SocketProvider>
       </main>
     </div>
   );

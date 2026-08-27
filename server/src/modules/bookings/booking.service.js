@@ -116,58 +116,52 @@ const createBooking = async (studentId, slotId, options = {}) => {
     );
   }
 
-  const session = await mongoose.startSession();
+  // 1. Atomic conditional seat reservation (No WriteConflict lock contention!)
+  const reservedSlot = await slotRepository.reserveSeat(slotId);
 
+  if (!reservedSlot) {
+    throw new ApiError(409, "Slot is full", "SLOT_FULL");
+  }
+
+  let booking;
   try {
-    session.startTransaction();
+    // 2. Create booking document
+    booking = await bookingRepository.createBooking({
+      student: studentId,
+      slot: slotId,
+      status: BOOKING_STATUS.BOOKED,
+    });
 
-    const reservedSlot = await slotRepository.reserveSeat(slotId, session);
-
-    if (!reservedSlot) {
-      throw new ApiError(409, "Slot is full", "SLOT_FULL");
-    }
-
-    const booking = await bookingRepository.createBookingWithSession(
-      {
-        student: studentId,
-        slot: slotId,
-        status: BOOKING_STATUS.BOOKED,
-      },
-      session,
-    );
-
+    // 3. Log audit event
     await auditService.logEvent({
       user: studentId,
       action: AUDIT_ACTIONS.BOOKING_CREATED,
       entity: "BOOKING",
       entityId: booking._id,
       metadata: { slotId },
-    }, session);
-
-    await session.commitTransaction();
-
-    const responseBody = {
-      id: booking._id,
-      student: booking.student,
-      slot: booking.slot,
-      status: booking.status,
-      createdAt: booking.createdAt,
-    };
-
-    await storeIdempotentResponse(studentId, idempotencyKey, responseBody);
-
-    // Emit live events
-    emitSlotUpdate(slotId, { action: "booking_created" });
-    emitCounsellorUpdate(slot.counsellor, "counsellor:roster_update", { action: "booking_created" });
-    emitAdminUpdate("admin:analytics_update", { action: "booking_created" });
-
-    return responseBody;
+    });
   } catch (error) {
-    await session.abortTransaction();
+    // If creating booking or audit fails, rollback reserved seat
+    await slotRepository.releaseSeat(slotId);
     throw error;
-  } finally {
-    await session.endSession();
   }
+
+  const responseBody = {
+    id: booking._id,
+    student: booking.student,
+    slot: booking.slot,
+    status: booking.status,
+    createdAt: booking.createdAt,
+  };
+
+  await storeIdempotentResponse(studentId, idempotencyKey, responseBody);
+
+  // Emit live events
+  emitSlotUpdate(slotId, { action: "booking_created" });
+  emitCounsellorUpdate(slot.counsellor, "counsellor:roster_update", { action: "booking_created" });
+  emitAdminUpdate("admin:analytics_update", { action: "booking_created" });
+
+  return responseBody;
 };
 
 const cancelBooking = async (studentId, bookingId) => {

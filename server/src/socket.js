@@ -25,15 +25,15 @@ export const initializeSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
-    console.log(`Socket connected: ${socket.id}`);
+    console.log(`[Socket.IO] Client connected: ${socket.id}`);
 
     // Join rooms for targeted updates
     socket.on("subscribe:slot", (slotId) => {
-      socket.join(`slot:${slotId}`);
+      socket.join(`slot:${String(slotId)}`);
     });
 
     socket.on("subscribe:counsellor", (counsellorId) => {
-      socket.join(`counsellor:${counsellorId}`);
+      socket.join(`counsellor:${String(counsellorId)}`);
     });
 
     socket.on("subscribe:admin", () => {
@@ -41,19 +41,19 @@ export const initializeSocket = (server) => {
     });
 
     socket.on("unsubscribe:slot", (slotId) => {
-      socket.leave(`slot:${slotId}`);
+      socket.leave(`slot:${String(slotId)}`);
     });
 
     socket.on("unsubscribe:counsellor", (counsellorId) => {
-      socket.leave(`counsellor:${counsellorId}`);
+      socket.leave(`counsellor:${String(counsellorId)}`);
     });
 
     socket.on("unsubscribe:admin", () => {
       socket.leave("admin");
     });
 
-    socket.on("disconnect", () => {
-      console.log(`Socket disconnected: ${socket.id}`);
+    socket.on("disconnect", (reason) => {
+      console.log(`[Socket.IO] Client disconnected: ${socket.id}, reason: ${reason}`);
     });
   });
 
@@ -67,9 +67,12 @@ export const getIO = () => {
   return io;
 };
 
-// Helper emit functions
+// Helper emit functions (targeted + global broadcast for 100% reliability)
 export const emitSlotUpdate = (slotId, payload) => {
-  if (io) io.to(`slot:${String(slotId)}`).emit("slot:update", payload);
+  if (io) {
+    io.to(`slot:${String(slotId)}`).emit("slot:update", payload);
+    io.emit("slot:update", payload);
+  }
 };
 
 export const emitGlobalSlotCreated = (payload) => {
@@ -77,9 +80,15 @@ export const emitGlobalSlotCreated = (payload) => {
 };
 
 export const emitCounsellorUpdate = (counsellorId, eventType, payload) => {
-  if (io) io.to(`counsellor:${String(counsellorId)}`).emit(eventType, payload);
+  if (io) {
+    io.to(`counsellor:${String(counsellorId)}`).emit(eventType, payload);
+    io.emit(eventType, payload);
+  }
 };
 
 export const emitAdminUpdate = (eventType, payload) => {
-  if (io) io.to("admin").emit(eventType, payload);
+  if (io) {
+    io.to("admin").emit(eventType, payload);
+    io.emit(eventType, payload);
+  }
 };
