@@ -19,7 +19,6 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://slot-sync-project.vercel.app",
   env.CLIENT_URL,
 ].filter(Boolean);
 
